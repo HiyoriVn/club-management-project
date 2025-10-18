@@ -9,17 +9,27 @@ use App\Core\Controller;
 class HomeController extends Controller
 {
 
-    // Đây là method mặc định (index)
     public function index()
     {
-        // Chuẩn bị dữ liệu để truyền ra view
-        $data = [
-            'title' => 'Chào mừng đến với Trang chủ CLB!',
-            'description' => 'Đây là trang chủ được tải từ HomeController.'
-        ];
+        // Kiểm tra xem đã đăng nhập chưa (dùng Session)
+        $isLoggedIn = isset($_SESSION['user_id']);
 
-        // Gọi hàm view() từ lớp cha (Controller)
-        // và truyền vào tên view 'home' cùng mảng $data
+        if ($isLoggedIn) {
+            // Nếu đã đăng nhập
+            $data = [
+                'title' => 'Chào mừng quay trở lại!',
+                'description' => 'Bạn đã đăng nhập với tên ' . htmlspecialchars($_SESSION['user_name']) . '.',
+                'isLoggedIn' => true
+            ];
+        } else {
+            // Nếu là khách
+            $data = [
+                'title' => 'Chào mừng đến với Trang chủ CLB!',
+                'description' => 'Đây là hệ thống quản lý nội bộ của CLB.',
+                'isLoggedIn' => false
+            ];
+        }
+
         $this->view('home', $data);
     }
 

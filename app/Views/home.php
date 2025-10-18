@@ -1,14 +1,25 @@
 <?php
-// Nạp phần Header (bao gồm <html>, <head>, <body>, <nav>)
 require_once ROOT_PATH . '/app/Views/layout/header.php';
 ?>
 
 <h1><?php echo $data['title']; ?></h1>
 <p><?php echo $data['description']; ?></p>
-<p>Nếu bạn thấy được dòng này, có nghĩa là <strong>Router</strong> đã hoạt động chính xác!</p>
-<p>Và bây giờ chúng ta đã có một <strong>Layout (Header & Footer)</strong> chung.</p>
+
+<hr>
+
+<?php if ($data['isLoggedIn']) : ?>
+    <p>Bạn có thể đi đến trang quản lý của mình.</p>
+    <a href="<?php echo BASE_URL; ?>/dashboard" style="background: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
+        Đi tới Bảng điều khiển
+    </a>
+<?php else : ?>
+    <p>Nếu bạn là thành viên, hãy đăng nhập để truy cập hệ thống.</p>
+    <a href="<?php echo BASE_URL; ?>/auth/login" style="background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
+        Đăng nhập ngay
+    </a>
+<?php endif; ?>
+
 
 <?php
-// Nạp phần Footer (bao gồm </body>, </html>)
 require_once ROOT_PATH . '/app/Views/layout/footer.php';
 ?>

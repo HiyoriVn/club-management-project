@@ -10,7 +10,7 @@ define('DB_CHARSET', 'utf8mb4');
 
 // 2. Cấu hình đường dẫn (sẽ dùng sau)
 // URL gốc của website (ví dụ: http://localhost/club-management-project)
-define('BASE_URL', 'http://localhost/club-management-project/public');
+define('BASE_URL', 'http://localhost/club-management-project/public'); 
 
 // Đường dẫn thư mục gốc của project (ví dụ: C:/xampp/htdocs/club-management-project)
 define('ROOT_PATH', dirname(__DIR__)); // __DIR__ là thư mục hiện tại (config), dirname(__DIR__) là thư mục cha (project root)

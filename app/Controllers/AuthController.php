@@ -13,11 +13,7 @@ class AuthController extends Controller
 
     public function __construct()
     {
-        // Khởi tạo User Model ngay khi AuthController được gọi
-        // Chúng ta cần sửa lại Autoloader một chút
-        // Tạm thời, chúng ta sẽ nạp (require) nó thủ công
-
-        // (Tí nữa chúng ta sẽ sửa Autoloader, giờ nạp thủ công)
+        // Code cũ (nạp User Model) giữ nguyên
         require_once ROOT_PATH . '/app/Models/User.php';
         $this->userModel = new User();
     }
@@ -27,10 +23,7 @@ class AuthController extends Controller
      */
     public function register()
     {
-        // Nếu đã đăng nhập, đẩy về trang chủ
-        if ($this->isLoggedIn()) {
-            $this->redirect(BASE_URL);
-        }
+        $this->requireGuest();
 
         // Dữ liệu mặc định cho form
         $data = [
@@ -54,6 +47,8 @@ class AuthController extends Controller
      */
     public function store()
     {
+        $this->requireGuest();
+        
         // Chỉ xử lý nếu request là POST
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
@@ -132,10 +127,7 @@ class AuthController extends Controller
      */
     public function login()
     {
-        // Nếu đã đăng nhập, đẩy về trang chủ
-        if ($this->isLoggedIn()) {
-            $this->redirect(BASE_URL);
-        }
+        $this->requireGuest();
 
         // Dữ liệu mặc định cho form
         $data = [
@@ -155,6 +147,8 @@ class AuthController extends Controller
      */
     public function processLogin()
     {
+        $this->requireGuest();
+        
         // Chỉ xử lý nếu request là POST
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 

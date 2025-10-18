@@ -63,6 +63,10 @@
 
         <div>
             <a href="<?php echo BASE_URL; ?>">Trang Chủ</a>
+            <a href="<?php echo BASE_URL; ?>/dashboard">Dashboard</a>
+            <?php if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) : ?>
+                <a href="<?php echo BASE_URL; ?>/department">Quản lý Ban</a>
+            <?php endif; ?>
         </div>
 
         <div>
