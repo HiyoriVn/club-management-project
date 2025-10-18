@@ -1,0 +1,12 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Đảm bảo không rewrite các file/folder có thật (như css, js)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Rewrite tất cả các yêu cầu khác vào index.php?url=...
+    RewriteRule ^(.*)$ index.php?url=$1 [L,QSA]
+</IfModule>
