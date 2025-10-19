@@ -64,8 +64,16 @@
         <div>
             <a href="<?php echo BASE_URL; ?>">Trang Chủ</a>
             <a href="<?php echo BASE_URL; ?>/dashboard">Dashboard</a>
+            <?php if (isset($_SESSION['user_id'])) : ?>
+                <a href="<?php echo BASE_URL; ?>/event">Sự kiện</a>
+            <?php endif; ?>
             <?php if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) : ?>
                 <a href="<?php echo BASE_URL; ?>/department">Quản lý Ban</a>
+                <a href="<?php echo BASE_URL; ?>/member">Quản lý Thành viên</a>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin') : ?>
+                <a href="<?php echo BASE_URL; ?>/departmentrole">Quản lý Vai trò</a>
             <?php endif; ?>
         </div>
 

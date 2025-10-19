@@ -88,4 +88,82 @@ class User
             return false;
         }
     }
+    /**
+     * Lấy 1 user bằng ID
+     */
+    public function findById($id)
+    {
+        $this->db->query("SELECT * FROM users WHERE id = :id");
+        $this->db->bind(':id', $id);
+        $row = $this->db->single();
+        return ($this->db->rowCount() > 0) ? $row : false;
+    }
+
+    /**
+     * Lấy tất cả user trong hệ thống
+     */
+    public function getAllUsers()
+    {
+        // Lấy các cột cần thiết, dùng NAME viết hoa
+        $this->db->query("SELECT id, NAME, email, system_role FROM users ORDER BY NAME");
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Lấy các vai trò (trong các Ban) của 1 user cụ thể
+     */
+    public function getRolesForUser($user_id)
+    {
+        // Dùng JOIN để lấy tên Ban và tên Vai trò
+        // Dùng NAME viết hoa cho các bảng
+        $this->db->query("SELECT 
+                            udr.id as assignment_id, 
+                            d.NAME as department_name, 
+                            dr.NAME as role_name
+                        FROM user_department_roles udr
+                        JOIN departments d ON udr.department_id = d.id
+                        JOIN department_roles dr ON udr.role_id = dr.id
+                        WHERE udr.user_id = :user_id");
+        $this->db->bind(':user_id', $user_id);
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Gán 1 vai trò mới cho user
+     */
+    public function assignRole($data)
+    {
+        // 'assigned_by' là admin đang thực hiện
+        $this->db->query("INSERT INTO user_department_roles (user_id, department_id, role_id, assigned_by) 
+                         VALUES (:user_id, :department_id, :role_id, :assigned_by)");
+
+        $this->db->bind(':user_id', $data['user_id']);
+        $this->db->bind(':department_id', $data['department_id']);
+        $this->db->bind(':role_id', $data['role_id']);
+        $this->db->bind(':assigned_by', $_SESSION['user_id']); // Lấy ID của admin đang đăng nhập
+
+        // Dùng try-catch để "bẫy" lỗi Duplicate Key (Mã lỗi 23000)
+        try {
+            return $this->db->execute();
+        } catch (\PDOException $e) {
+            // Nếu lỗi là do "Duplicate key" (mã 23000)
+            if ($e->getCode() == 23000) {
+                // Chỉ đơn giản là trả về false, không làm "chết" chương trình
+                return false;
+            } else {
+                // Nếu là lỗi khác, thì mới báo
+                die('Lỗi CSDL khác: ' . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Thu hồi 1 vai trò (xóa 1 dòng trong user_department_roles)
+     */
+    public function revokeRole($assignment_id)
+    {
+        $this->db->query("DELETE FROM user_department_roles WHERE id = :assignment_id");
+        $this->db->bind(':assignment_id', $assignment_id);
+        return $this->db->execute();
+    }
 }

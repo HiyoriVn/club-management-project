@@ -34,9 +34,19 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                         <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($dep['description']); ?></td>
                         <td style="padding: 10px; border: 1px solid #ddd;"><?php echo $dep['parent_id'] ?? 'N/A'; ?></td>
                         <td style="padding: 10px; border: 1px solid #ddd;">
-                            <a href="<?php echo BASE_URL; ?>/department/edit/<?php echo $dep['id']; ?>">Sửa</a>
+                            <a href="<?php echo BASE_URL; ?>/department/edit/<?php echo $dep['id']; ?>" style="margin: 0;"><button type="submit"
+                                    style="padding: 5px 10px; background: #318320ff; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                                    Sửa
+                                </button></a>
 
-                            <a href="#" style="color: red;">Xóa</a>
+                            <form action="<?php echo BASE_URL; ?>/department/destroy/<?php echo $dep['id']; ?>" method="POST"
+                                style="margin: 0;">
+                                <button type="submit"
+                                    style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;"
+                                    onclick="return confirm('Bạn có chắc chắn muốn xóa Ban [<?php echo htmlspecialchars($dep['NAME']); ?>]? Hành động này không thể hoàn tác!');">
+                                    Xóa
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 <?php endforeach; ?>

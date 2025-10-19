@@ -101,4 +101,17 @@ class Department
         // Thực thi
         return $this->db->execute();
     }
+    /**
+     * Xóa một Ban khỏi CSDL
+     * @param int $id ID của Ban cần xóa
+     * @return boolean True nếu thành công, False nếu thất bại
+     */
+    public function delete($id)
+    {
+        $this->db->query("DELETE FROM departments WHERE id = :id");
+        $this->db->bind(':id', $id);
+
+        // Thực thi
+        return $this->db->execute();
+    }
 }

@@ -185,4 +185,37 @@ class DepartmentController extends Controller
             $this->view('departments/edit', $data);
         }
     }
+    
+    /**
+     * Xử lý Xóa Ban (HTTP POST)
+     * @param int $id ID từ URL (vd: /department/destroy/1)
+     */
+    public function destroy($id)
+    {
+        // Chỉ xử lý nếu request là POST
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            $this->redirect(BASE_URL . '/department');
+        }
+
+        // 1. Tìm xem Ban này có tồn tại không
+        $department = $this->departmentModel->findById($id);
+        if (!$department) {
+            // (Sau này ta sẽ làm flash message "Không tìm thấy Ban")
+            $this->redirect(BASE_URL . '/department');
+        }
+
+        // 2. (Nâng cao - Tùy chọn) Kiểm tra xem Ban này có Ban con không
+        // Nếu có Ban con, không cho xóa (để an toàn)
+        // $this->db->query("SELECT COUNT(*) as count FROM departments WHERE parent_id = :id");
+        // ... (Logic này ta có thể thêm sau)
+
+        // 3. Tiến hành Xóa
+        if ($this->departmentModel->delete($id)) {
+            // Xóa thành công
+            $this->redirect(BASE_URL . '/department');
+        } else {
+            // Lỗi CSDL
+            die('Có lỗi xảy ra khi xóa CSDL. Vui lòng thử lại.');
+        }
+    }
 }
