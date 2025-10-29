@@ -30,6 +30,24 @@ spl_autoload_register(function ($className) {
     }
 });
 
+// --- THÊM HÀM HELPER NÀY ---
+/**
+ * Hàm tiện ích để gửi thông báo
+ * @param int $user_id Người nhận
+ * @param string $title Tiêu đề
+ * @param string $message Nội dung
+ */
+function sendNotification($user_id, $title, $message)
+{
+    // Nạp Model (nếu chưa nạp)
+    if (!class_exists('App\Models\Notification')) {
+        require_once ROOT_PATH . '/app/Models/Notification.php';
+    }
+    // Tạo đối tượng và gửi
+    $notificationModel = new App\Models\Notification();
+    $notificationModel->create($user_id, $title, $message);
+}
+
 // 3. (Tạm thời) Nạp lớp Database thủ công vì nó chưa theo chuẩn App\
 // (Sau này ta sẽ sửa lại sau)
 require_once ROOT_PATH . '/app/Core/Database.php';

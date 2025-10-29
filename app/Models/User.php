@@ -166,4 +166,45 @@ class User
         $this->db->bind(':assignment_id', $assignment_id);
         return $this->db->execute();
     }
+
+    /**
+     * Lấy danh sách ID các Ban mà user là thành viên
+     * @param int $user_id
+     * @return array Mảng các ID, vd: [1, 3]
+     */
+    public function getDepartmentIds($user_id)
+    {
+        $this->db->query("SELECT DISTINCT department_id FROM user_department_roles WHERE user_id = :user_id");
+        $this->db->bind(':user_id', $user_id);
+
+        // 1. Lấy kết quả bằng hàm public
+        // Kết quả sẽ là: [ ['department_id' => 1], ['department_id' => 3] ]
+        $resultSet = $this->db->resultSet();
+
+        // 2. Dùng array_column() để trích xuất thành mảng [ 1, 3 ]
+        $results = array_column($resultSet, 'department_id');
+
+        return $results ? $results : [];
+    }
+
+    /**
+     * Cập nhật system_role cho 1 user (Promote/Demote)
+     * @param int $user_id ID của user cần đổi
+     * @param string $new_role Vai trò mới (vd: 'member', 'guest')
+     * @return boolean
+     */
+    public function setSystemRole($user_id, $new_role)
+    {
+        // Kiểm tra xem $new_role có hợp lệ không (an toàn)
+        $allowed_roles = ['guest', 'member', 'subadmin', 'admin'];
+        if (!in_array($new_role, $allowed_roles)) {
+            return false;
+        }
+
+        $this->db->query("UPDATE users SET system_role = :new_role WHERE id = :user_id");
+        $this->db->bind(':new_role', $new_role);
+        $this->db->bind(':user_id', $user_id);
+
+        return $this->db->execute();
+    }
 }

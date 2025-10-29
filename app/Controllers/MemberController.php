@@ -112,4 +112,38 @@ class MemberController extends Controller
 
         $this->redirect(BASE_URL . '/member/manage/' . $user_id);
     }
+    
+    /**
+     * (UPDATE) Cập nhật System Role (thay cho promote/demote) (POST)
+     */
+    public function updateSystemRole($user_id)
+    {
+        // Chỉ "Super Admin" mới được quyền thay đổi vai trò hệ thống
+        $this->requireRole(['admin']);
+
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            $this->redirect(BASE_URL . '/member');
+        }
+
+        $new_role = $_POST['system_role']; // Lấy từ dropdown
+
+        // --- Logic an toàn (Rất quan trọng) ---
+        $user_to_change = $this->userModel->findById($user_id);
+
+        // 1. Không cho admin tự thay đổi vai trò của chính mình
+        if ($user_to_change['id'] == $_SESSION['user_id']) {
+            // (Nên làm Flash Message: "Không thể thay đổi vai trò của chính mình")
+            $this->redirect(BASE_URL . '/member');
+        }
+        // 2. Không cho admin này giáng cấp/thay đổi 1 admin khác
+        if ($user_to_change['system_role'] == 'admin') {
+            // (Nên làm Flash Message: "Không thể thay đổi vai trò của Admin khác")
+            $this->redirect(BASE_URL . '/member');
+        }
+        // --- Hết logic an toàn ---
+
+        // Tiến hành cập nhật
+        $this->userModel->setSystemRole($user_id, $new_role);
+        $this->redirect(BASE_URL . '/member');
+    }
 }

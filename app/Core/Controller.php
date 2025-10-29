@@ -23,8 +23,21 @@ class Controller
      */
     public function view($view, $data = [])
     {
+        // Luôn lấy dữ liệu thông báo nếu đã đăng nhập
+        if (isset($_SESSION['user_id'])) {
+            // Nạp Model (nếu chưa nạp)
+            if (!class_exists('App\Models\Notification')) {
+                require_once ROOT_PATH . '/app/Models/Notification.php';
+            }
+            $notificationModel = new \App\Models\Notification();
+            $data['unread_notifications_count'] = $notificationModel->countUnreadForUser($_SESSION['user_id']);
+            $data['latest_unread_notifications'] = $notificationModel->getUnreadForUser($_SESSION['user_id'], 5);
+        } else {
+            // Nếu chưa đăng nhập, gán giá trị mặc định
+            $data['unread_notifications_count'] = 0;
+            $data['latest_unread_notifications'] = [];
+        }
         // Biến mảng $data thành các biến riêng lẻ
-        // Ví dụ: $data['title'] sẽ thành biến $title
         extract($data);
 
         // Đường dẫn đến file view

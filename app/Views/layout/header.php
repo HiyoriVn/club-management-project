@@ -64,9 +64,14 @@
         <div>
             <a href="<?php echo BASE_URL; ?>">Trang Chủ</a>
             <a href="<?php echo BASE_URL; ?>/dashboard">Dashboard</a>
-            <?php if (isset($_SESSION['user_id'])) : ?>
-                <a href="<?php echo BASE_URL; ?>/event">Sự kiện</a>
+            <a href="<?php echo BASE_URL; ?>/event">Sự kiện</a>
+            <a href="<?php echo BASE_URL; ?>/announcement">Thông báo</a>
+            <a href="<?php echo BASE_URL; ?>/project">Dự án</a>
+
+            <?php if (isset($_SESSION['user_id']) && $_SESSION['user_role'] != 'guest') : ?>
+                <a href="<?php echo BASE_URL; ?>/file">Tài liệu</a>
             <?php endif; ?>
+
             <?php if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) : ?>
                 <a href="<?php echo BASE_URL; ?>/department">Quản lý Ban</a>
                 <a href="<?php echo BASE_URL; ?>/member">Quản lý Thành viên</a>
@@ -79,10 +84,43 @@
 
         <div>
             <?php if (isset($_SESSION['user_id'])) : ?>
+                <div class="notification-area" style="display: inline-block; position: relative; margin-right: 15px;">
+                    <a href="#" onclick="toggleNotificationDropdown()" style="color: white; text-decoration: none; font-size: 1.2em;" title="Thông báo">
+                        🔔 <?php if ($data['unread_notifications_count'] > 0): ?>
+                            <span style="background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7em; position: absolute; top: -5px; right: -8px;">
+                                <?php echo $data['unread_notifications_count']; ?>
+                            </span>
+                        <?php endif; ?>
+                    </a>
+                    <div id="notificationDropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: 300px; z-index: 100;">
+                        <div style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                            <strong>Thông báo</strong>
+                            <a href="#" style="font-size: 0.8em; color: #007bff;">Đánh dấu đã đọc</a>
+                        </div>
+                        <ul style="list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto;">
+                            <?php if (empty($data['latest_unread_notifications'])): ?>
+                                <li style="padding: 10px; text-align: center; color: #6c757d;">Không có thông báo mới.</li>
+                            <?php else: ?>
+                                <?php foreach ($data['latest_unread_notifications'] as $noti): ?>
+                                    <li style="padding: 10px; border-bottom: 1px solid #eee;">
+                                        <strong style="display: block; font-size: 0.9em;"><?php echo htmlspecialchars($noti['title']); ?></strong>
+                                        <span style="font-size: 0.85em; color: #555;"><?php echo htmlspecialchars($noti['message']); ?></span>
+                                        <small style="display: block; text-align: right; color: #999; font-size: 0.75em;"><?php echo date('d/m H:i', strtotime($noti['created_at'])); ?></small>
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </ul>
+                        <div style="text-align: center; padding: 10px; border-top: 1px solid #eee;">
+                            <a href="#" style="font-size: 0.9em;">Xem tất cả</a>
+                        </div>
+                    </div>
+                </div>
+
                 <span style="color: #fff; margin-right: 15px;">
                     Xin chào, <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>
                     (<?php echo htmlspecialchars($_SESSION['user_role']); ?>)
                 </span>
+                <a href="<?php echo BASE_URL; ?>/profile" style="color: #ffc107;">Hồ sơ</a>
                 <a href="<?php echo BASE_URL; ?>/auth/logout">Đăng Xuất</a>
 
             <?php else : ?>

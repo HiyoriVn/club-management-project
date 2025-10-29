@@ -27,14 +27,23 @@ class EventController extends Controller
      */
     public function index()
     {
-        // "Chốt chặn" cấp 1: Chỉ cần đăng nhập
-        $this->requireLogin();
+        // 1. Xác định vai trò
+        $user_role = 'guest'; // Mặc định
+        $my_registrations = []; // Mảng đăng ký
 
-        $events = $this->eventModel->findAll();
+        if (isset($_SESSION['user_id'])) {
+            $user_role = $_SESSION['user_role'];
+            // Lấy danh sách đăng ký (nếu đã đăng nhập)
+            $my_registrations = $this->eventModel->findMyRegistrations($_SESSION['user_id']);
+        }
+
+        // 2. Lấy Feed Sự kiện dựa trên vai trò
+        $events = $this->eventModel->getFeed($user_role);
 
         $data = [
             'title' => 'Danh sách Sự kiện',
-            'events' => $events
+            'events' => $events,
+            'my_registrations' => $my_registrations
         ];
 
         $this->view('events/index', $data);
@@ -77,12 +86,13 @@ class EventController extends Controller
         }
 
         $data = [
-            'title' => 'Tạo Sự kiện mới', // Dùng cho <title> của trang
-            'form_title' => trim($_POST['form_title']), // Dùng cho form
+            'title' => 'Tạo Sự kiện mới',
+            'form_title' => trim($_POST['form_title']),
             'description' => trim($_POST['description']),
             'start_time' => trim($_POST['start_time']),
             'end_time' => trim($_POST['end_time']),
             'location' => trim($_POST['location']),
+            'visibility' => $_POST['visibility'],
             'title_err' => '',
             'start_time_err' => ''
         ];
@@ -108,5 +118,209 @@ class EventController extends Controller
             // Có lỗi, tải lại view create với data lỗi
             $this->view('events/create', $data);
         }
+    }
+
+    /**
+     * (UPDATE) Hiển thị form Sửa Sự kiện (GET)
+     */
+    public function edit($id)
+    {
+        // "Chốt chặn" cấp 2: Phải là admin/subadmin
+        $this->requireRole(['admin', 'subadmin']);
+
+        // 1. Lấy thông tin của Sự kiện cần sửa
+        $event = $this->eventModel->findById($id);
+        if (!$event) {
+            $this->redirect(BASE_URL . '/event');
+        }
+
+        // (Kiểm tra quyền nâng cao: Có phải chính người tạo mới được sửa?)
+        // (Tạm thời bỏ qua, admin/subadmin được sửa hết)
+
+        $data = [
+            'title' => 'Chỉnh sửa Sự kiện',
+            'id' => $id,
+            'form_title' => $event['title'],
+            'description' => $event['description'],
+            'start_time' => date('Y-m-d\TH:i', strtotime($event['start_time'])),
+            'end_time' => $event['end_time'] ? date('Y-m-d\TH:i', strtotime($event['end_time'])) : '',
+            'location' => $event['location'],
+            'visibility' => $event['visibility'],
+            'title_err' => '',
+            'start_time_err' => ''
+        ];
+
+        $this->view('events/edit', $data);
+    }
+
+    /**
+     * (UPDATE) Xử lý cập nhật Sự kiện (POST)
+     */
+    public function update($id)
+    {
+        // "Chốt chặn" cấp 2: Phải là admin/subadmin
+        $this->requireRole(['admin', 'subadmin']);
+
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            $this->redirect(BASE_URL . '/event');
+        }
+
+        $data = [
+            'title' => 'Chỉnh sửa Sự kiện',
+            'id' => $id,
+            'form_title' => trim($_POST['form_title']),
+            'description' => trim($_POST['description']),
+            'start_time' => trim($_POST['start_time']),
+            'end_time' => trim($_POST['end_time']),
+            'location' => trim($_POST['location']),
+            'visibility' => $_POST['visibility'],
+            'title_err' => '',
+            'start_time_err' => ''
+        ];
+
+        // Validate
+        if (empty($data['form_title'])) {
+            $data['title_err'] = 'Vui lòng nhập Tiêu đề Sự kiện';
+        }
+        if (empty($data['start_time'])) {
+            $data['start_time_err'] = 'Vui lòng nhập Thời gian bắt đầu';
+        }
+
+        if (empty($data['title_err']) && empty($data['start_time_err'])) {
+            // Đổi tên 'form_title' thành 'title' để Model hiểu
+            $data['title'] = $data['form_title'];
+
+            if ($this->eventModel->update($id, $data)) {
+                $this->redirect(BASE_URL . '/event');
+            } else {
+                die('Có lỗi CSDL khi cập nhật.');
+            }
+        } else {
+            // Có lỗi, tải lại view edit với data lỗi
+            $this->view('events/edit', $data);
+        }
+    }
+
+    /**
+     * (DELETE) Xử lý Xóa Sự kiện (POST)
+     */
+    public function destroy($id)
+    {
+        // "Chốt chặn" cấp 2: Phải là admin/subadmin
+        $this->requireRole(['admin', 'subadmin']);
+
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            $this->redirect(BASE_URL . '/event');
+        }
+
+        if (!$this->eventModel->findById($id)) {
+            $this->redirect(BASE_URL . '/event');
+        }
+
+        // Tiến hành Xóa
+        if ($this->eventModel->delete($id)) {
+            $this->redirect(BASE_URL . '/event');
+        } else {
+            die('Có lỗi CSDL khi xóa.');
+        }
+    }
+
+    /**
+     * Xử lý Đăng ký / Hủy đăng ký (HTTP POST)
+     */
+    public function toggleRegistration($event_id)
+    {
+        // 1. Phải đăng nhập
+        $this->requireLogin();
+
+        // 2. Phải là POST
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            $this->redirect(BASE_URL . '/event');
+        }
+
+        // 3. Lấy thông tin
+        $user_id = $_SESSION['user_id'];
+
+        // 4. Kiểm tra sự kiện có thật không
+        if (!$this->eventModel->findById($event_id)) {
+            $this->redirect(BASE_URL . '/event');
+        }
+
+        // 5. Logic "Toggle"
+        // Kiểm tra xem user đã đăng ký sự kiện này chưa
+        $is_registered = $this->eventModel->isUserRegistered($event_id, $user_id);
+
+        if ($is_registered) {
+            // Đã đăng ký -> thì Hủy
+            $this->eventModel->unregisterParticipant($event_id, $user_id);
+        } else {
+            // Chưa đăng ký -> thì Đăng ký
+            $this->eventModel->registerParticipant($event_id, $user_id);
+        }
+
+        // 6. Quay lại trang danh sách
+        $this->redirect(BASE_URL . '/event');
+    }
+
+    /**
+     * (READ) Hiển thị trang Điểm danh cho 1 Sự kiện (GET)
+     */
+    public function attendance($event_id)
+    {
+        // "Chốt chặn" cấp 2: Phải là admin/subadmin
+        $this->requireRole(['admin', 'subadmin']);
+
+        // 1. Lấy thông tin sự kiện
+        $event = $this->eventModel->findById($event_id);
+        if (!$event) {
+            $this->redirect(BASE_URL . '/event');
+        }
+
+        // 2. Lấy danh sách người tham gia
+        $participants = $this->eventModel->getParticipants($event_id);
+
+        $data = [
+            'title' => 'Điểm danh: ' . $event['title'],
+            'event' => $event,
+            'participants' => $participants
+        ];
+
+        $this->view('events/attendance', $data);
+    }
+
+    /**
+     * (UPDATE) Xử lý Check-in (POST)
+     */
+    public function checkin($event_id, $attendance_id)
+    {
+        // "Chốt chặn" cấp 2
+        $this->requireRole(['admin', 'subadmin']);
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            $this->redirect(BASE_URL . '/event');
+        }
+
+        // Cập nhật status
+        $this->eventModel->checkInParticipant($attendance_id);
+
+        // Quay lại trang điểm danh
+        $this->redirect(BASE_URL . '/event/attendance/' . $event_id);
+    }
+
+    /**
+     * (UPDATE) Xử lý Hoàn tác Check-in (POST)
+     */
+    public function undocheckin($event_id, $attendance_id)
+    {
+        // "Chốt chặn" cấp 2
+        $this->requireRole(['admin', 'subadmin']);
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            $this->redirect(BASE_URL . '/event');
+        }
+
+        // Cập nhật status
+        $this->eventModel->undoCheckIn($attendance_id);
+
+        // Quay lại trang điểm danh
+        $this->redirect(BASE_URL . '/event/attendance/' . $event_id);
     }
 }

@@ -14,8 +14,8 @@ class DashboardController extends Controller
      */
     public function __construct()
     {
-        // Áp dụng "chốt chặn": Bắt buộc phải đăng nhập
-        $this->requireLogin();
+        // Chỉ member trở lên mới có Dashboard
+        $this->requireRole(['admin', 'subadmin', 'member']);
     }
 
     /**

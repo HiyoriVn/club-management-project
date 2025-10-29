@@ -14,3 +14,7 @@ define('BASE_URL', 'http://localhost/club-management-project/public');
 
 // Đường dẫn thư mục gốc của project (ví dụ: C:/xampp/htdocs/club-management-project)
 define('ROOT_PATH', dirname(__DIR__)); // __DIR__ là thư mục hiện tại (config), dirname(__DIR__) là thư mục cha (project root)
+
+// 3. Cấu hình Upload
+define('UPLOAD_PATH', ROOT_PATH . '/uploads/'); // Đường dẫn thư mục vật lý
+define('UPLOAD_URL', BASE_URL . '/../uploads/'); // URL để truy cập file từ trình duyệt (lùi 1 cấp từ /public)
