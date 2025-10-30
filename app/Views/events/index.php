@@ -70,6 +70,8 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                             ?>
                                 <form action="<?php echo BASE_URL; ?>/event/toggleRegistration/<?php echo $event['id']; ?>" method="POST" style="margin-bottom: 5px;">
 
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                                    
                                     <?php if ($is_registered) : // Nếu đã đăng ký 
                                     ?>
                                         <button type="submit"

@@ -246,5 +246,9 @@ class AuthController extends Controller
         $_SESSION['user_name'] = $user['NAME'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_role'] = $user['system_role']; // Lấy vai trò từ CSDL
+
+        // --- THÊM DÒNG NÀY ---
+        // Tạo một token ngẫu nhiên để chống lỗi CSRF
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
 }
