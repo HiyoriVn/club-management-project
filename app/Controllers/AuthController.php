@@ -48,19 +48,16 @@ class AuthController extends Controller
     public function store()
     {
         $this->requireGuest();
-        
+
         // Chỉ xử lý nếu request là POST
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Kiểm tra CSRF Token
             if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-                set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+                \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
                 $this->redirect(BASE_URL . '/auth/register'); // Quay lại form đăng ký
                 exit;
             }
-            
-            // 1. "Làm sạch" dữ liệu đầu vào (phòng chống XSS)
-            // $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
             $data = [
                 'title' => 'Đăng Ký Tài Khoản',
@@ -113,10 +110,11 @@ class AuthController extends Controller
 
                 // Gọi Model để đăng ký
                 if ($this->userModel->register($data)) {
-                    set_flash_message('success', 'Đăng ký tài khoản thành công! Vui lòng đăng nhập.');
+                    \log_activity('user_register', 'Tài khoản mới [' . $data['name'] . '] đã được đăng ký.');
+                    \set_flash_message('success', 'Đăng ký tài khoản thành công! Vui lòng đăng nhập.');
                     $this->redirect(BASE_URL . '/auth/login');
                 } else {
-                    set_flash_message('error', 'Có lỗi xảy ra, không thể đăng ký. Vui lòng thử lại.');
+                    \set_flash_message('error', 'Có lỗi xảy ra, không thể đăng ký. Vui lòng thử lại.');
                     $this->redirect(BASE_URL . '/auth/register'); // Quay lại form
                 }
             } else {
@@ -155,17 +153,17 @@ class AuthController extends Controller
     public function processLogin()
     {
         $this->requireGuest();
-        
+
         // Chỉ xử lý nếu request là POST
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Kiểm tra CSRF Token
             if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-                set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+                \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
                 $this->redirect(BASE_URL . '/auth/register'); // Quay lại form đăng ký
                 exit;
             }
-            
+
             // Dữ liệu "thô" từ form
             $data = [
                 'title' => 'Đăng Nhập',
@@ -199,8 +197,8 @@ class AuthController extends Controller
                 if ($loggedInUser) {
                     // Đăng nhập thành công!
                     $this->create_user_session($loggedInUser);
-
-                    set_flash_message('success', 'Đăng nhập thành công! Chào mừng ' . htmlspecialchars($loggedInUser['NAME']) . '.');
+                    \log_activity('user_login', 'Người dùng [' . $loggedInUser['NAME'] . '] đã đăng nhập.');
+                    \set_flash_message('success', 'Đăng nhập thành công! Chào mừng ' . htmlspecialchars($loggedInUser['NAME']) . '.');
                     $this->redirect(BASE_URL); // Chuyển về trang chủ
                 } else {
                     // Mật khẩu sai
@@ -223,6 +221,9 @@ class AuthController extends Controller
      */
     public function logout()
     {
+        if (isset($_SESSION['user_name'])) {
+            \log_activity('user_logout', 'Người dùng [' . $_SESSION['user_name'] . '] đã đăng xuất.');
+        }
         // Hủy các biến session
         unset($_SESSION['user_id']);
         unset($_SESSION['user_name']);
@@ -231,8 +232,9 @@ class AuthController extends Controller
 
         // Hủy toàn bộ session
         session_destroy();
+        session_start();
 
-        set_flash_message('info', 'Bạn đã đăng xuất khỏi hệ thống.');
+        \set_flash_message('info', 'Bạn đã đăng xuất khỏi hệ thống.');
         $this->redirect(BASE_URL);
     }
 

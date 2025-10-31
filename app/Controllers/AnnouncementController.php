@@ -94,7 +94,7 @@ class AnnouncementController extends Controller
 
         // Kiểm tra CSRF Token
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
             exit;
         }
@@ -140,10 +140,10 @@ class AnnouncementController extends Controller
             $data['title'] = $data['form_title'];
 
             if ($this->announcementModel->create($data)) {
-                set_flash_message('success', 'Đăng thông báo [' . $data['title'] . '] thành công!');
+                \set_flash_message('success', 'Đăng thông báo [' . $data['title'] . '] thành công!');
                 $this->redirect(BASE_URL . '/announcement');
             } else {
-                set_flash_message('error', 'Có lỗi CSDL xảy ra, không thể đăng thông báo.');
+                \set_flash_message('error', 'Có lỗi CSDL xảy ra, không thể đăng thông báo.');
                 $this->redirect(BASE_URL . '/announcement/create'); // Quay lại form
             }
         } else {
@@ -199,7 +199,7 @@ class AnnouncementController extends Controller
 
         // Kiểm tra CSRF Token
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
             exit;
         }
@@ -245,10 +245,10 @@ class AnnouncementController extends Controller
             $data['title'] = $data['form_title'];
 
             if ($this->announcementModel->update($id, $data)) {
-                set_flash_message('success', 'Cập nhật thông báo [' . $data['title'] . '] thành công!');
+                \set_flash_message('success', 'Cập nhật thông báo [' . $data['title'] . '] thành công!');
                 $this->redirect(BASE_URL . '/announcement');
             } else {
-                set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật.');
+                \set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật.');
                 $this->redirect(BASE_URL . '/announcement/edit/' . $id); // Quay lại form
             }
         } else {
@@ -269,21 +269,21 @@ class AnnouncementController extends Controller
 
         // Kiểm tra CSRF Token
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
             exit;
         }
 
         if (!$this->announcementModel->findById($id)) {
-            set_flash_message('error', 'Không tìm thấy thông báo để xóa.');
+            \set_flash_message('error', 'Không tìm thấy thông báo để xóa.');
             $this->redirect(BASE_URL . '/announcement');
         }
 
         if ($this->announcementModel->delete($id)) {
-            set_flash_message('success', 'Xóa thông báo thành công!');
+            \set_flash_message('success', 'Xóa thông báo thành công!');
             $this->redirect(BASE_URL . '/announcement');
         } else {
-            set_flash_message('error', 'Có lỗi CSDL, không thể xóa thông báo.');
+            \set_flash_message('error', 'Có lỗi CSDL, không thể xóa thông báo.');
             $this->redirect(BASE_URL . '/announcement');
         }
     }

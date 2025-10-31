@@ -78,7 +78,7 @@ class MemberController extends Controller
 
         // Kiểm tra CSRF Token
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
             exit;
         }
@@ -91,15 +91,16 @@ class MemberController extends Controller
 
         // Validate đơn giản
         if (empty($data['department_id']) || empty($data['role_id'])) {
-            set_flash_message('error', 'Vui lòng chọn Ban và Vai trò.');
+            \set_flash_message('error', 'Vui lòng chọn Ban và Vai trò.');
             $this->redirect(BASE_URL . '/member/manage/' . $user_id);
         }
 
         // Gán vai trò
         if (!$this->userModel->assignRole($data)) {
-            set_flash_message('error', 'Gán thất bại. Có thể vai trò này đã tồn tại.');
+            \set_flash_message('error', 'Gán thất bại. Có thể vai trò này đã tồn tại.');
         } else {
-            set_flash_message('success', 'Gán vai trò thành công!');
+            \log_activity('member_role_assigned', 'Đã gán vai trò (RoleID: ' . $data['role_id'] . ') cho (UserID: ' . $user_id . ') tại (DeptID: ' . $data['department_id'] . ').');
+            \set_flash_message('success', 'Gán vai trò thành công!');
         }
 
         // Dù thành công hay thất bại, quay lại trang manage
@@ -119,16 +120,17 @@ class MemberController extends Controller
 
         // Kiểm tra CSRF Token
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
             exit;
         }
 
         $this->userModel->revokeRole($assignment_id);
-        set_flash_message('success', 'Thu hồi vai trò thành công!');
+        \log_activity('member_role_revoked', 'Đã thu hồi vai trò (AssignmentID: ' . $assignment_id . ') từ (UserID: ' . $user_id . ').');
+        \set_flash_message('success', 'Thu hồi vai trò thành công!');
         $this->redirect(BASE_URL . '/member/manage/' . $user_id);
     }
-    
+
     /**
      * (UPDATE) Cập nhật System Role (thay cho promote/demote) (POST)
      */
@@ -143,7 +145,7 @@ class MemberController extends Controller
 
         // Kiểm tra CSRF Token
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
             exit;
         }
@@ -155,16 +157,20 @@ class MemberController extends Controller
 
         // 1. Không cho admin tự thay đổi vai trò của chính mình
         if ($user_to_change['id'] == $_SESSION['user_id']) {
-            set_flash_message('error', 'Không thể thay đổi vai trò của chính mình.');
+            \set_flash_message('error', 'Không thể thay đổi vai trò của chính mình.');
             $this->redirect(BASE_URL . '/member');
         }
         // 2. Không cho admin này giáng cấp/thay đổi 1 admin khác
-        if ($user_to_change['system_role'] == 'admin') {
-            set_flash_message('error', 'Không thể thay đổi vai trò của Admin khác.');
+        else if ($user_to_change['system_role'] == 'admin') {
+            \set_flash_message('error', 'Không thể thay đổi vai trò của Admin khác.');
             $this->redirect(BASE_URL . '/member');
         }
         // --- Hết logic an toàn ---
-        set_flash_message('success', 'Cập nhật vai trò hệ thống cho ' . htmlspecialchars($user_to_change['NAME']) . ' thành công!');
-        $this->redirect(BASE_URL . '/member');
+        else {
+            $this->userModel->setSystemRole($user_id, $new_role);
+            \log_activity('member_system_role_updated', 'Đã cập nhật vai trò hệ thống cho [' . $user_to_change['NAME'] . '] (ID: ' . $user_id . ') thành [' . $new_role . '].');
+            \set_flash_message('success', 'Cập nhật vai trò hệ thống cho ' . htmlspecialchars($user_to_change['NAME']) . ' thành công!');
+            $this->redirect(BASE_URL . '/member');
+        }
     }
 }

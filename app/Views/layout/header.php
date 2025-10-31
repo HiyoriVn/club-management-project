@@ -105,6 +105,7 @@
 
             <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin') : ?>
                 <a href="<?php echo BASE_URL; ?>/departmentrole">Quản lý Vai trò</a>
+                <a href="<?php echo BASE_URL; ?>/activitylog" style="color: #ffc107;">Nhật ký (Log)</a>
             <?php endif; ?>
         </div>
 
@@ -155,6 +156,6 @@
             <?php endif; ?>
         </div>
 
-    </nav> <?php display_flash_message(); ?>
+    </nav> <?php \display_flash_message(); ?>
 
     <div class="container">

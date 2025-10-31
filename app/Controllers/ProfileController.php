@@ -70,7 +70,7 @@ class ProfileController extends Controller
 
         // Kiểm tra CSRF Token
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
             exit;
         }
@@ -91,10 +91,11 @@ class ProfileController extends Controller
 
         // 2. Gọi Model (hàm "createOrUpdate" tự lo việc Insert/Update)
         if ($this->profileModel->createOrUpdate($user_id, $data)) {
-            set_flash_message('success', 'Cập nhật hồ sơ thành công!');
+            \log_activity('profile_updated', 'Người dùng (ID: ' . $user_id . ') đã cập nhật hồ sơ cá nhân.');
+            \set_flash_message('success', 'Cập nhật hồ sơ thành công!');
             $this->redirect(BASE_URL . '/profile');
         } else {
-            set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật hồ sơ.');
+            \set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật hồ sơ.');
             $this->redirect(BASE_URL . '/profile');
         }
     }

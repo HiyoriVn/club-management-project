@@ -58,7 +58,7 @@ class FileController extends Controller
 
         // Kiểm tra CSRF Token
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
             exit;
         }
@@ -81,14 +81,14 @@ class FileController extends Controller
 
         // Kiểm tra file có thực sự được upload
         if ($uploadedFile["error"] !== UPLOAD_ERR_OK) {
-            set_flash_message('error', "Lỗi khi upload file. Mã lỗi: " . $uploadedFile["error"]);
+            \set_flash_message('error', "Lỗi khi upload file. Mã lỗi: " . $uploadedFile["error"]);
             $uploadOk = 0;
         }
 
         // Kiểm tra loại file (Whitelist)
         $allowed_types = ['jpg', 'jpeg', 'png', 'pdf', 'docx', 'pptx', 'xlsx', 'txt', 'zip', 'rar'];
         if (!in_array($fileType, $allowed_types)) {
-            set_flash_message('error', "File quá lớn (Tối đa 50MB).");
+            \set_flash_message('error', "File quá lớn (Tối đa 50MB).");
             $uploadOk = 0;
         }
 
@@ -109,13 +109,14 @@ class FileController extends Controller
                     'department_id' => $department_id
                 ];
                 if ($this->fileModel->create($data)) {
-                    set_flash_message('success', 'Upload file [' . htmlspecialchars($original_filename) . '] thành công!');
+                    \log_activity('file_uploaded', 'Đã tải lên file: [' . $original_filename . '] (Lưu_trữ_với_tên: ' . $unique_filename . ').');
+                    \set_flash_message('success', 'Upload file [' . htmlspecialchars($original_filename) . '] thành công!');
                 } else {
-                    set_flash_message('error', "Lưu thông tin file vào CSDL thất bại.");
+                    \set_flash_message('error', "Lưu thông tin file vào CSDL thất bại.");
                     unlink($target_file);
                 }
             } else {
-                set_flash_message('error', "Có lỗi khi di chuyển file đã upload.");
+                \set_flash_message('error', "Có lỗi khi di chuyển file đã upload.");
             }
         }
 
@@ -136,7 +137,7 @@ class FileController extends Controller
 
         // Kiểm tra CSRF Token
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
             exit;
         }
@@ -144,7 +145,7 @@ class FileController extends Controller
         // 1. Lấy thông tin file từ CSDL
         $file = $this->fileModel->findById($id);
         if (!$file) {
-            set_flash_message('error', 'Không tìm thấy file để xóa.');
+            \set_flash_message('error', 'Không tìm thấy file để xóa.');
             $this->redirect(BASE_URL . '/file');
         }
 
@@ -156,7 +157,8 @@ class FileController extends Controller
 
         // 3. Xóa thông tin file trong CSDL
         $this->fileModel->delete($id);
-        set_flash_message('success', 'Đã xóa file [' . htmlspecialchars($file['file_name']) . '] thành công!');
+        \log_activity('file_deleted', 'Đã xóa file: [' . $file['file_name'] . '] (ID: ' . $id . ').');
+        \set_flash_message('success', 'Đã xóa file [' . htmlspecialchars($file['file_name']) . '] thành công!');
         $this->redirect(BASE_URL . '/file');
     }
 }
