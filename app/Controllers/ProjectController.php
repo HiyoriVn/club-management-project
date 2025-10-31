@@ -82,6 +82,13 @@ class ProjectController extends Controller
             $this->redirect(BASE_URL . '/project');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $data = [
             'title' => 'Tạo Dự án mới',
             'name' => trim($_POST['name']),
@@ -104,9 +111,11 @@ class ProjectController extends Controller
 
         if (empty($data['name_err'])) {
             if ($this->projectModel->create($data)) {
+                set_flash_message('success', 'Tạo dự án [' . htmlspecialchars($data['name']) . '] thành công!');
                 $this->redirect(BASE_URL . '/project');
             } else {
-                die('Có lỗi CSDL xảy ra.');
+                set_flash_message('error', 'Có lỗi CSDL, không thể tạo dự án.');
+                $this->redirect(BASE_URL . '/project/create');
             }
         } else {
             // Lỗi, tải lại view create
@@ -156,6 +165,13 @@ class ProjectController extends Controller
             $this->redirect(BASE_URL . '/project');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $data = [
             'title' => 'Chỉnh sửa Dự án',
             'id' => $id,
@@ -179,9 +195,11 @@ class ProjectController extends Controller
 
         if (empty($data['name_err'])) {
             if ($this->projectModel->update($id, $data)) {
+                set_flash_message('success', 'Cập nhật dự án [' . htmlspecialchars($data['name']) . '] thành công!');
                 $this->redirect(BASE_URL . '/project');
             } else {
-                die('Có lỗi CSDL khi cập nhật.');
+                set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật.');
+                $this->redirect(BASE_URL . '/project/edit/' . $id);
             }
         } else {
             $this->view('projects/edit', $data);
@@ -199,14 +217,25 @@ class ProjectController extends Controller
             $this->redirect(BASE_URL . '/project');
         }
 
-        if (!$this->projectModel->findById($id)) {
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
+        $project = $this->projectModel->findById($id); // Lấy tên
+        if (!$project) {
+            set_flash_message('error', 'Không tìm thấy dự án.');
             $this->redirect(BASE_URL . '/project');
         }
 
         if ($this->projectModel->delete($id)) {
+            set_flash_message('success', 'Đã xóa dự án [' . htmlspecialchars($project['NAME']) . '] thành công!');
             $this->redirect(BASE_URL . '/project');
         } else {
-            die('Có lỗi CSDL khi xóa.');
+            set_flash_message('error', 'Có lỗi CSDL khi xóa.');
+            $this->redirect(BASE_URL . '/project');
         }
     }
 
@@ -249,17 +278,27 @@ class ProjectController extends Controller
             $this->redirect(BASE_URL . '/project');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $user_id = $_POST['user_id'];
         $role = $_POST['role'];
 
         // Validate đơn giản
         if (empty($user_id) || empty($role)) {
-            // (Nên làm Flash Message báo lỗi)
+            set_flash_message('error', 'Vui lòng chọn thành viên và vai trò.');
             $this->redirect(BASE_URL . '/project/manage/' . $project_id);
         }
 
-        // Gán vai trò
-        $this->projectModel->addMember($project_id, $user_id, $role);
+        if ($this->projectModel->addMember($project_id, $user_id, $role)) {
+            set_flash_message('success', 'Thêm thành viên vào dự án thành công!');
+        } else {
+            set_flash_message('error', 'Thêm thất bại. Thành viên này có thể đã ở trong dự án.');
+        }
 
         $this->redirect(BASE_URL . '/project/manage/' . $project_id);
     }
@@ -270,12 +309,20 @@ class ProjectController extends Controller
     public function removeMember($project_id, $assignment_id)
     {
         $this->requireRole(['admin', 'subadmin']);
+        
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             $this->redirect(BASE_URL . '/project');
         }
 
-        $this->projectModel->removeMember($assignment_id);
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
 
+        $this->projectModel->removeMember($assignment_id);
+        set_flash_message('success', 'Xóa thành viên khỏi dự án thành công!');
         $this->redirect(BASE_URL . '/project/manage/' . $project_id);
     }
 
@@ -322,8 +369,16 @@ class ProjectController extends Controller
     public function storeTask($project_id)
     {
         $this->requireRole(['admin', 'subadmin']);
+        
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             $this->redirect(BASE_URL . '/project');
+        }
+
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
         }
 
         $data = [
@@ -337,8 +392,9 @@ class ProjectController extends Controller
         // Validate
         if (!empty($data['title'])) {
             $this->projectModel->createTask($data);
+            set_flash_message('success', 'Tạo task [' . htmlspecialchars($data['title']) . '] thành công!');
         } else {
-            // (Nên làm Flash Message "Tiêu đề Task là bắt buộc")
+            set_flash_message('error', 'Tiêu đề Task là bắt buộc.');
         }
 
         $this->redirect(BASE_URL . '/project/tasks/' . $project_id);
@@ -350,13 +406,21 @@ class ProjectController extends Controller
     public function moveTask($project_id, $task_id)
     {
         $this->requireRole(['admin', 'subadmin']);
+        
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             $this->redirect(BASE_URL . '/project');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $new_status = $_POST['new_status']; // Lấy status mới từ form
         $this->projectModel->updateTaskStatus($task_id, $new_status);
-
+        set_flash_message('info', 'Đã di chuyển task.');
         $this->redirect(BASE_URL . '/project/tasks/' . $project_id);
     }
 
@@ -366,12 +430,20 @@ class ProjectController extends Controller
     public function deleteTask($project_id, $task_id)
     {
         $this->requireRole(['admin', 'subadmin']);
+        
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             $this->redirect(BASE_URL . '/project');
         }
 
-        $this->projectModel->deleteTask($task_id);
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
 
+        $this->projectModel->deleteTask($task_id);
+        set_flash_message('success', 'Đã xóa task.');
         $this->redirect(BASE_URL . '/project/tasks/' . $project_id);
     }
 }

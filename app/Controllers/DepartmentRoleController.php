@@ -55,6 +55,13 @@ class DepartmentRoleController extends Controller
             $this->redirect(BASE_URL . '/departmentrole');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $data = [
             'title' => 'Tạo Vai trò mới',
             'name' => trim($_POST['name']),
@@ -69,9 +76,11 @@ class DepartmentRoleController extends Controller
 
         if (empty($data['name_err'])) {
             if ($this->roleModel->create($data)) {
+                set_flash_message('success', 'Tạo vai trò [' . htmlspecialchars($data['name']) . '] thành công!');
                 $this->redirect(BASE_URL . '/departmentrole');
             } else {
-                die('Có lỗi CSDL xảy ra.');
+                set_flash_message('error', 'Có lỗi CSDL, không thể tạo vai trò.');
+                $this->redirect(BASE_URL . '/departmentrole/create');
             }
         } else {
             $this->view('department_roles/create', $data);
@@ -106,6 +115,13 @@ class DepartmentRoleController extends Controller
             $this->redirect(BASE_URL . '/departmentrole');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $data = [
             'title' => 'Chỉnh sửa Vai trò',
             'id' => $id,
@@ -124,9 +140,11 @@ class DepartmentRoleController extends Controller
 
         if (empty($data['name_err'])) {
             if ($this->roleModel->update($id, $data)) {
+                set_flash_message('success', 'Cập nhật vai trò [' . htmlspecialchars($data['name']) . '] thành công!');
                 $this->redirect(BASE_URL . '/departmentrole');
             } else {
-                die('Có lỗi CSDL xảy ra.');
+                set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật.');
+                $this->redirect(BASE_URL . '/departmentrole/edit/' . $id);
             }
         } else {
             $this->view('department_roles/edit', $data);
@@ -142,7 +160,16 @@ class DepartmentRoleController extends Controller
             $this->redirect(BASE_URL . '/departmentrole');
         }
 
-        if (!$this->roleModel->findById($id)) {
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
+        $role = $this->roleModel->findById($id); // Lấy tên trước khi xóa
+        if (!$role) {
+            set_flash_message('error', 'Không tìm thấy vai trò để xóa.');
             $this->redirect(BASE_URL . '/departmentrole');
         }
 
@@ -151,9 +178,11 @@ class DepartmentRoleController extends Controller
         // Nhưng tạm thời ta sẽ bỏ qua để làm cho nhanh)
 
         if ($this->roleModel->delete($id)) {
+            set_flash_message('success', 'Đã xóa vai trò [' . htmlspecialchars($role['NAME']) . '] thành công!');
             $this->redirect(BASE_URL . '/departmentrole');
         } else {
-            die('Có lỗi CSDL xảy ra.');
+            set_flash_message('error', 'Có lỗi CSDL, không thể xóa vai trò.');
+            $this->redirect(BASE_URL . '/departmentrole');
         }
     }
 }

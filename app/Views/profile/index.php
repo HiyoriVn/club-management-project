@@ -8,7 +8,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
     <p>Cập nhật thông tin cá nhân của bạn.</p>
 
     <form action="<?php echo BASE_URL; ?>/profile/update" method="POST">
-
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
         <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 30px;">
 
             <div class="basic-info">

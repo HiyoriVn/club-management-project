@@ -41,12 +41,6 @@ class FileController extends Controller
             'upload_err' => '' // Lưu lỗi upload (nếu có)
         ];
 
-        // Kiểm tra xem có lỗi upload từ session không (sẽ làm ở hàm upload)
-        if (isset($_SESSION['upload_error'])) {
-            $data['upload_err'] = $_SESSION['upload_error'];
-            unset($_SESSION['upload_error']); // Xóa lỗi sau khi hiển thị
-        }
-
         $this->view('files/index', $data);
     }
 
@@ -60,6 +54,13 @@ class FileController extends Controller
 
         if ($_SERVER['REQUEST_METHOD'] != 'POST' || !isset($_FILES['fileToUpload'])) {
             $this->redirect(BASE_URL . '/file');
+        }
+
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
         }
 
         $target_dir = UPLOAD_PATH; // Lấy từ config.php
@@ -77,19 +78,25 @@ class FileController extends Controller
         $fileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
 
         // --- Các bước kiểm tra file (Có thể thêm nhiều kiểm tra hơn) ---
+
         // Kiểm tra file có thực sự được upload
         if ($uploadedFile["error"] !== UPLOAD_ERR_OK) {
-            $_SESSION['upload_error'] = "Lỗi khi upload file. Mã lỗi: " . $uploadedFile["error"];
+            set_flash_message('error', "Lỗi khi upload file. Mã lỗi: " . $uploadedFile["error"]);
             $uploadOk = 0;
         }
+
+        // Kiểm tra loại file (Whitelist)
+        $allowed_types = ['jpg', 'jpeg', 'png', 'pdf', 'docx', 'pptx', 'xlsx', 'txt', 'zip', 'rar'];
+        if (!in_array($fileType, $allowed_types)) {
+            set_flash_message('error', "File quá lớn (Tối đa 50MB).");
+            $uploadOk = 0;
+        }
+
         // Kiểm tra kích thước file (ví dụ: giới hạn 50MB)
         elseif ($uploadedFile["size"] > 50 * 1024 * 1024) {
             $_SESSION['upload_error'] = "File quá lớn (Tối đa 50MB).";
             $uploadOk = 0;
         }
-        // (Có thể thêm kiểm tra loại file nếu muốn)
-        // $allowed_types = ['jpg', 'png', 'pdf', 'docx'];
-        // if (!in_array($fileType, $allowed_types)) { ... }
 
         // --- Xử lý upload ---
         if ($uploadOk == 1) {
@@ -102,13 +109,13 @@ class FileController extends Controller
                     'department_id' => $department_id
                 ];
                 if ($this->fileModel->create($data)) {
-                    // Thành công
+                    set_flash_message('success', 'Upload file [' . htmlspecialchars($original_filename) . '] thành công!');
                 } else {
-                    $_SESSION['upload_error'] = "Lưu thông tin file vào CSDL thất bại.";
-                    unlink($target_file); // Xóa file đã upload nếu lỗi CSDL
+                    set_flash_message('error', "Lưu thông tin file vào CSDL thất bại.");
+                    unlink($target_file);
                 }
             } else {
-                $_SESSION['upload_error'] = "Có lỗi khi di chuyển file đã upload.";
+                set_flash_message('error', "Có lỗi khi di chuyển file đã upload.");
             }
         }
 
@@ -127,9 +134,17 @@ class FileController extends Controller
             $this->redirect(BASE_URL . '/file');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         // 1. Lấy thông tin file từ CSDL
         $file = $this->fileModel->findById($id);
         if (!$file) {
+            set_flash_message('error', 'Không tìm thấy file để xóa.');
             $this->redirect(BASE_URL . '/file');
         }
 
@@ -141,7 +156,7 @@ class FileController extends Controller
 
         // 3. Xóa thông tin file trong CSDL
         $this->fileModel->delete($id);
-
+        set_flash_message('success', 'Đã xóa file [' . htmlspecialchars($file['file_name']) . '] thành công!');
         $this->redirect(BASE_URL . '/file');
     }
 }

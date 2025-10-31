@@ -4,7 +4,7 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Models\Event; // "use" Model Event
+use App\Models\Event;
 
 class EventController extends Controller
 {
@@ -13,9 +13,7 @@ class EventController extends Controller
 
     public function __construct()
     {
-        // Lần này chúng ta không "chặn" ở __construct
-        // vì hàm index() (xem danh sách) cho phép mọi người vào
-
+    
         // Nạp model
         require_once ROOT_PATH . '/app/Models/Event.php';
         $this->eventModel = new Event();
@@ -85,6 +83,13 @@ class EventController extends Controller
             $this->redirect(BASE_URL . '/event');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $data = [
             'title' => 'Tạo Sự kiện mới',
             'form_title' => trim($_POST['form_title']),
@@ -110,9 +115,11 @@ class EventController extends Controller
             $data['title'] = $data['form_title'];
 
             if ($this->eventModel->create($data)) {
+                set_flash_message('success', 'Tạo sự kiện [' . htmlspecialchars($data['title']) . '] thành công!');
                 $this->redirect(BASE_URL . '/event');
             } else {
-                die('Có lỗi CSDL xảy ra.');
+                set_flash_message('error', 'Có lỗi CSDL, không thể tạo sự kiện.');
+                $this->redirect(BASE_URL . '/event/create');
             }
         } else {
             // Có lỗi, tải lại view create với data lỗi
@@ -165,6 +172,13 @@ class EventController extends Controller
             $this->redirect(BASE_URL . '/event');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $data = [
             'title' => 'Chỉnh sửa Sự kiện',
             'id' => $id,
@@ -187,13 +201,14 @@ class EventController extends Controller
         }
 
         if (empty($data['title_err']) && empty($data['start_time_err'])) {
-            // Đổi tên 'form_title' thành 'title' để Model hiểu
             $data['title'] = $data['form_title'];
 
             if ($this->eventModel->update($id, $data)) {
+                set_flash_message('success', 'Cập nhật sự kiện [' . htmlspecialchars($data['title']) . '] thành công!');
                 $this->redirect(BASE_URL . '/event');
             } else {
-                die('Có lỗi CSDL khi cập nhật.');
+                set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật.');
+                $this->redirect(BASE_URL . '/event/edit/' . $id);
             }
         } else {
             // Có lỗi, tải lại view edit với data lỗi
@@ -213,15 +228,26 @@ class EventController extends Controller
             $this->redirect(BASE_URL . '/event');
         }
 
-        if (!$this->eventModel->findById($id)) {
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
+        $event = $this->eventModel->findById($id); // Lấy tên trước khi xóa
+        if (!$event) {
+            set_flash_message('error', 'Không tìm thấy sự kiện để xóa.');
             $this->redirect(BASE_URL . '/event');
         }
 
         // Tiến hành Xóa
         if ($this->eventModel->delete($id)) {
+            set_flash_message('success', 'Đã xóa sự kiện [' . htmlspecialchars($event['title']) . '] thành công!');
             $this->redirect(BASE_URL . '/event');
         } else {
-            die('Có lỗi CSDL khi xóa.');
+            set_flash_message('error', 'Có lỗi CSDL, không thể xóa.');
+            $this->redirect(BASE_URL . '/event');
         }
     }
 
@@ -238,27 +264,34 @@ class EventController extends Controller
             $this->redirect(BASE_URL . '/event');
         }
 
-        // 3. Lấy thông tin
+        // 3. Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
+        // 4. Lấy thông tin
         $user_id = $_SESSION['user_id'];
 
-        // 4. Kiểm tra sự kiện có thật không
+        // 5. Kiểm tra sự kiện có thật không
         if (!$this->eventModel->findById($event_id)) {
             $this->redirect(BASE_URL . '/event');
         }
 
-        // 5. Logic "Toggle"
+        // 6. Logic "Toggle"
         // Kiểm tra xem user đã đăng ký sự kiện này chưa
         $is_registered = $this->eventModel->isUserRegistered($event_id, $user_id);
 
         if ($is_registered) {
-            // Đã đăng ký -> thì Hủy
             $this->eventModel->unregisterParticipant($event_id, $user_id);
+            set_flash_message('info', 'Đã hủy đăng ký sự kiện.');
         } else {
-            // Chưa đăng ký -> thì Đăng ký
             $this->eventModel->registerParticipant($event_id, $user_id);
+            set_flash_message('success', 'Đăng ký sự kiện thành công!');
         }
 
-        // 6. Quay lại trang danh sách
+        // 7. Quay lại trang danh sách
         $this->redirect(BASE_URL . '/event');
     }
 
@@ -295,14 +328,21 @@ class EventController extends Controller
     {
         // "Chốt chặn" cấp 2
         $this->requireRole(['admin', 'subadmin']);
+        
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             $this->redirect(BASE_URL . '/event');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         // Cập nhật status
         $this->eventModel->checkInParticipant($attendance_id);
-
-        // Quay lại trang điểm danh
+        set_flash_message('success', 'Check-in thành công!');
         $this->redirect(BASE_URL . '/event/attendance/' . $event_id);
     }
 
@@ -317,10 +357,16 @@ class EventController extends Controller
             $this->redirect(BASE_URL . '/event');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         // Cập nhật status
         $this->eventModel->undoCheckIn($attendance_id);
-
-        // Quay lại trang điểm danh
+        set_flash_message('info', 'Đã hoàn tác check-in.');
         $this->redirect(BASE_URL . '/event/attendance/' . $event_id);
     }
 }

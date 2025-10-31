@@ -52,6 +52,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                 <a href="<?php echo BASE_URL; ?>/project/edit/<?php echo $project['id']; ?>" style="color: blue; display: block; margin-bottom: 5px;">Sửa</a>
 
                                 <form action="<?php echo BASE_URL; ?>/project/destroy/<?php echo $project['id']; ?>" method="POST" style="margin: 0;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">    
                                     <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; padding: 0;"
                                         onclick="return confirm('Bạn có chắc muốn xóa Dự án [<?php echo htmlspecialchars(addslashes($project['NAME'])); ?>]?');">
                                         Xóa

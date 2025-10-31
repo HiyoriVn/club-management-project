@@ -39,11 +39,11 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                     Sửa
                                 </button></a>
 
-                            <form action="<?php echo BASE_URL; ?>/department/destroy/<?php echo $dep['id']; ?>" method="POST"
-                                style="margin: 0;">
+                            <form action="<?php echo BASE_URL; ?>/department/destroy/<?php echo $dep['id']; ?>" method="POST" style="margin: 0;">
+                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                 <button type="submit"
                                     style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;"
-                                    onclick="return confirm('Bạn có chắc chắn muốn xóa Ban [<?php echo htmlspecialchars($dep['NAME']); ?>]? Hành động này không thể hoàn tác!');">
+                                    onclick="return confirm('Bạn có chắc chắn muốn xóa Ban [<?php echo htmlspecialchars(addslashes($dep['NAME'])); ?>]? Hành động này không thể hoàn tác!');">
                                     Xóa
                                 </button>
                             </form>

@@ -69,9 +69,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                 $is_registered = in_array($event['id'], $data['my_registrations']);
                             ?>
                                 <form action="<?php echo BASE_URL; ?>/event/toggleRegistration/<?php echo $event['id']; ?>" method="POST" style="margin-bottom: 5px;">
-
-                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
-                                    
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                     <?php if ($is_registered) : // Nếu đã đăng ký 
                                     ?>
                                         <button type="submit"
@@ -85,13 +83,11 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                             style="background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; width: 100%;">
                                             Đăng ký
                                         </button>
-                                    <?php endif; // Hết logic if(is_registered) 
+                                    <?php endif;
                                     ?>
                                 </form>
 
                             <?php
-                            // LOGIC 2: LỜI NHẮN CHO GUEST (CHƯA ĐĂNG NHẬP)
-                            // Đây là phần em hỏi. Nó đi với cái if (isset($_SESSION['user_id'])) ở trên
                             else:
                             ?>
                                 <a href="<?php echo BASE_URL; ?>/auth/login" style="font-size: 0.9em; color: #007bff; text-decoration: none;">Đăng nhập để đăng ký</a>
@@ -111,19 +107,20 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                 </a>
 
                                 <form action="<?php echo BASE_URL; ?>/event/destroy/<?php echo $event['id']; ?>" method="POST" style="margin: 0; margin-top: 5px;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                     <button type="submit"
                                         style="background: none; border: none; color: #dc3545; cursor: pointer; padding: 0; font: inherit; font-size: 0.9em; text-align: left;"
                                         onclick="return confirm('Bạn có chắc muốn xóa Sự kiện [<?php echo htmlspecialchars(addslashes($event['title'])); ?>]?');">
                                         Xóa (Admin)
                                     </button>
                                 </form>
-                            <?php endif; // Hết logic admin/subadmin 
+                            <?php endif;
                             ?>
                         </td>
                     </tr>
-                <?php endforeach; // Hết vòng lặp foreach 
+                <?php endforeach;
                 ?>
-            <?php endif; // Hết kiểm tra mảng rỗng 
+            <?php endif;
             ?>
         </tbody>
     </table>

@@ -38,11 +38,11 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                 Sửa
                             </a>
 
-                            <form action="<?php echo BASE_URL; ?>/departmentrole/destroy/<?php echo $role['id']; ?>" method="POST"
-                                style="margin: 0;">
+                            <form action="<?php echo BASE_URL; ?>/departmentrole/destroy/<?php echo $role['id']; ?>" method="POST" style="margin: 0;">
+                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                 <button type="submit"
                                     style="padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;"
-                                    onclick="return confirm('Bạn có chắc chắn muốn xóa Vai trò [<?php echo htmlspecialchars($role['NAME']); ?>]?');">
+                                    onclick="return confirm('Bạn có chắc chắn muốn xóa Vai trò [<?php echo htmlspecialchars(addslashes($role['NAME'])); ?>]?');">
                                     Xóa
                                 </button>
                             </form>

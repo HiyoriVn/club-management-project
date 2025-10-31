@@ -54,6 +54,32 @@
             /* Bỏ margin-top đi cho đẹp */
             /* margin-top: 20px; */
         }
+
+        .flash-message {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .flash-message.success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .flash-message.error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .flash-message.info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
     </style>
 </head>
 
@@ -129,6 +155,6 @@
             <?php endif; ?>
         </div>
 
-    </nav>
+    </nav> <?php display_flash_message(); ?>
 
     <div class="container">

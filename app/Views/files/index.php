@@ -14,7 +14,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
             <?php endif; ?>
 
             <form action="<?php echo BASE_URL; ?>/file/upload" method="POST" enctype="multipart/form-data">
-
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label for="fileToUpload">Chọn file:</label><br>
                     <input type="file" name="fileToUpload" id="fileToUpload" required style="margin-top: 5px;">
@@ -63,6 +63,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
 
                             <?php if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) : ?>
                                 <form action="<?php echo BASE_URL; ?>/file/destroy/<?php echo $file['id']; ?>" method="POST" style="display: inline-block; margin: 0;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                     <button type="submit" style="background: none; border: none; color: red; cursor: pointer; padding: 0;"
                                         onclick="return confirm('Bạn có chắc muốn xóa file [<?php echo htmlspecialchars(addslashes($file['file_name'])); ?>]?');" title="Xóa">
                                         &#x274C; </button>

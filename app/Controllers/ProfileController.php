@@ -68,6 +68,13 @@ class ProfileController extends Controller
             $this->redirect(BASE_URL . '/profile');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $user_id = $_SESSION['user_id'];
 
         // 1. Lấy dữ liệu "thô" từ form
@@ -84,11 +91,11 @@ class ProfileController extends Controller
 
         // 2. Gọi Model (hàm "createOrUpdate" tự lo việc Insert/Update)
         if ($this->profileModel->createOrUpdate($user_id, $data)) {
-            // Cập nhật thành công
-            // (Nên có Flash Message "Cập nhật thành công")
+            set_flash_message('success', 'Cập nhật hồ sơ thành công!');
             $this->redirect(BASE_URL . '/profile');
         } else {
-            die('Có lỗi CSDL xảy ra.');
+            set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật hồ sơ.');
+            $this->redirect(BASE_URL . '/profile');
         }
     }
 }

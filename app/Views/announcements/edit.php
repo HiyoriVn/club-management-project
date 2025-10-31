@@ -7,7 +7,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
     <h2><?php echo $data['title']; ?></h2>
 
     <form action="<?php echo BASE_URL; ?>/announcement/update/<?php echo $data['id']; ?>" method="POST">
-
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
         <div class="form-group" style="margin-bottom: 15px;">
             <label for="form_title">Tiêu đề: <sup>*</sup></label>
             <input type="text" name="form_title" id="form_title" style="width: 100%; padding: 8px; border: 1px solid <?php echo !empty($data['title_err']) ? '#dc3545' : '#ccc'; ?>; border-radius: 3px;"

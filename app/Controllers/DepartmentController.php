@@ -66,6 +66,13 @@ class DepartmentController extends Controller
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             $this->redirect(BASE_URL . '/department');
         }
+        
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
 
         // 1. Lấy dữ liệu "thô" từ form
         $allDepartments = $this->departmentModel->findAll(); // Lấy lại list cho dropdown
@@ -90,18 +97,18 @@ class DepartmentController extends Controller
         if (empty($data['name_err'])) {
             // Validation thành công
             if ($this->departmentModel->create($data)) {
-                // Tạo thành công
-                // (Sau này ta sẽ làm Flash Message "Tạo thành công")
+                set_flash_message('success', 'Tạo Ban [' . htmlspecialchars($data['name']) . '] thành công!');
                 $this->redirect(BASE_URL . '/department');
             } else {
-                // Lỗi CSDL
-                die('Có lỗi xảy ra khi thêm vào CSDL. Vui lòng thử lại.');
+                set_flash_message('error', 'Có lỗi CSDL, không thể tạo Ban.');
+                $this->redirect(BASE_URL . '/department/create');
             }
         } else {
             // Validation thất bại, hiển thị lại form với lỗi
             $this->view('departments/create', $data);
         }
     }
+
     /**
      * Hiển thị form Sửa Ban (HTTP GET)
      * @param int $id ID từ URL (vd: /department/edit/1)
@@ -147,6 +154,13 @@ class DepartmentController extends Controller
             $this->redirect(BASE_URL . '/department');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         // 1. Lấy dữ liệu "thô" từ form
         $allDepartments = $this->departmentModel->findAll(); // Lấy lại list cho dropdown
         $data = [
@@ -174,11 +188,11 @@ class DepartmentController extends Controller
         if (empty($data['name_err'])) {
             // Validation thành công
             if ($this->departmentModel->update($id, $data)) {
-                // Cập nhật thành công
+                set_flash_message('success', 'Cập nhật Ban [' . htmlspecialchars($data['name']) . '] thành công!');
                 $this->redirect(BASE_URL . '/department');
             } else {
-                // Lỗi CSDL
-                die('Có lỗi xảy ra khi cập nhật CSDL. Vui lòng thử lại.');
+                set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật.');
+                $this->redirect(BASE_URL . '/department/edit/' . $id);
             }
         } else {
             // Validation thất bại, hiển thị lại form (edit) với lỗi
@@ -197,10 +211,17 @@ class DepartmentController extends Controller
             $this->redirect(BASE_URL . '/department');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         // 1. Tìm xem Ban này có tồn tại không
         $department = $this->departmentModel->findById($id);
         if (!$department) {
-            // (Sau này ta sẽ làm flash message "Không tìm thấy Ban")
+            set_flash_message('error', 'Không tìm thấy Ban để xóa.');
             $this->redirect(BASE_URL . '/department');
         }
 
@@ -211,11 +232,11 @@ class DepartmentController extends Controller
 
         // 3. Tiến hành Xóa
         if ($this->departmentModel->delete($id)) {
-            // Xóa thành công
+            set_flash_message('success', 'Đã xóa Ban [' . htmlspecialchars($department['NAME']) . '] thành công!');
             $this->redirect(BASE_URL . '/department');
         } else {
-            // Lỗi CSDL
-            die('Có lỗi xảy ra khi xóa CSDL. Vui lòng thử lại.');
+            set_flash_message('error', 'Có lỗi CSDL, không thể xóa Ban.');
+            $this->redirect(BASE_URL . '/department');
         }
     }
 }

@@ -52,6 +52,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                         ) :
                         ?>
                             <form action="<?php echo BASE_URL; ?>/member/updateSystemRole/<?php echo $user['id']; ?>" method="POST" style="display: flex; gap: 5px; margin: 0;">
+                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                 <select name="system_role" style="padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
                                     <option value="guest" <?php echo ($user['system_role'] == 'guest') ? 'selected' : ''; ?>>Guest</option>
                                     <option value="member" <?php echo ($user['system_role'] == 'member') ? 'selected' : ''; ?>>Member</option>

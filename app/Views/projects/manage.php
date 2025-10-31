@@ -16,7 +16,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
             <h3>Thêm thành viên</h3>
 
             <form action="<?php echo BASE_URL; ?>/project/addMember/<?php echo $data['project']['id']; ?>" method="POST">
-
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label for="user_id">1. Chọn Thành viên:</label>
                     <select name="user_id" id="user_id" style="width: 100%; padding: 8px; margin-top: 5px;">
@@ -66,8 +66,9 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                 <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($member['project_role']); ?></td>
                                 <td style="padding: 10px; border: 1px solid #ddd;">
                                     <form action="<?php echo BASE_URL; ?>/project/removeMember/<?php echo $data['project']['id']; ?>/<?php echo $member['assignment_id']; ?>" method="POST" style="margin: 0;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                         <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; padding: 0;"
-                                            onclick="return confirm('Bạn có chắc muốn xóa [<?php echo htmlspecialchars($member['NAME']); ?>] khỏi dự án?');">
+                                            onclick="return confirm('Bạn có chắc muốn xóa [<?php echo htmlspecialchars(addslashes($member['NAME'])); ?>] khỏi dự án?');">
                                             Xóa
                                         </button>
                                     </form>

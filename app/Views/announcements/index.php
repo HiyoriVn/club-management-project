@@ -83,6 +83,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                         <a href="<?php echo BASE_URL; ?>/announcement/edit/<?php echo $item['id']; ?>" style="color: blue; text-decoration: none; margin-right: 15px;">Sửa</a>
 
                         <form action="<?php echo BASE_URL; ?>/announcement/destroy/<?php echo $item['id']; ?>" method="POST" style="display: inline-block; margin: 0;">
+                            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                             <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; padding: 0;"
                                 onclick="return confirm('Bạn có chắc muốn xóa thông báo này?');">
                                 Xóa

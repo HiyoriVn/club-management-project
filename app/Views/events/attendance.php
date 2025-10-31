@@ -46,12 +46,14 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                         <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
                             <?php if ($p['status'] == 'registered') : ?>
                                 <form action="<?php echo BASE_URL; ?>/event/checkin/<?php echo $data['event']['id']; ?>/<?php echo $p['attendance_id']; ?>" method="POST" style="margin: 0;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                     <button type="submit" style="background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px;">
                                         Check-in
                                     </button>
                                 </form>
                             <?php elseif ($p['status'] == 'checked_in') : ?>
                                 <form action="<?php echo BASE_URL; ?>/event/undocheckin/<?php echo $data['event']['id']; ?>/<?php echo $p['attendance_id']; ?>" method="POST" style="margin: 0;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                     <button type="submit" style="background: #ffc107; color: black; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px;">
                                         Hoàn tác
                                     </button>

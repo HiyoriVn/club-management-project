@@ -76,6 +76,13 @@ class MemberController extends Controller
             $this->redirect(BASE_URL . '/member');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $data = [
             'user_id' => $user_id,
             'department_id' => $_POST['department_id'],
@@ -84,13 +91,15 @@ class MemberController extends Controller
 
         // Validate đơn giản
         if (empty($data['department_id']) || empty($data['role_id'])) {
-            // (Nên làm Flash Message báo lỗi: "Vui lòng chọn Ban và Vai trò")
+            set_flash_message('error', 'Vui lòng chọn Ban và Vai trò.');
             $this->redirect(BASE_URL . '/member/manage/' . $user_id);
         }
 
         // Gán vai trò
         if (!$this->userModel->assignRole($data)) {
-            // (Nên làm Flash Message báo lỗi: "Gán thất bại, có thể vai trò này đã tồn tại")
+            set_flash_message('error', 'Gán thất bại. Có thể vai trò này đã tồn tại.');
+        } else {
+            set_flash_message('success', 'Gán vai trò thành công!');
         }
 
         // Dù thành công hay thất bại, quay lại trang manage
@@ -108,8 +117,15 @@ class MemberController extends Controller
             $this->redirect(BASE_URL . '/member');
         }
 
-        $this->userModel->revokeRole($assignment_id);
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
 
+        $this->userModel->revokeRole($assignment_id);
+        set_flash_message('success', 'Thu hồi vai trò thành công!');
         $this->redirect(BASE_URL . '/member/manage/' . $user_id);
     }
     
@@ -125,6 +141,13 @@ class MemberController extends Controller
             $this->redirect(BASE_URL . '/member');
         }
 
+        // Kiểm tra CSRF Token
+        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+            set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+            $this->redirect(BASE_URL);
+            exit;
+        }
+
         $new_role = $_POST['system_role']; // Lấy từ dropdown
 
         // --- Logic an toàn (Rất quan trọng) ---
@@ -132,18 +155,16 @@ class MemberController extends Controller
 
         // 1. Không cho admin tự thay đổi vai trò của chính mình
         if ($user_to_change['id'] == $_SESSION['user_id']) {
-            // (Nên làm Flash Message: "Không thể thay đổi vai trò của chính mình")
+            set_flash_message('error', 'Không thể thay đổi vai trò của chính mình.');
             $this->redirect(BASE_URL . '/member');
         }
         // 2. Không cho admin này giáng cấp/thay đổi 1 admin khác
         if ($user_to_change['system_role'] == 'admin') {
-            // (Nên làm Flash Message: "Không thể thay đổi vai trò của Admin khác")
+            set_flash_message('error', 'Không thể thay đổi vai trò của Admin khác.');
             $this->redirect(BASE_URL . '/member');
         }
         // --- Hết logic an toàn ---
-
-        // Tiến hành cập nhật
-        $this->userModel->setSystemRole($user_id, $new_role);
+        set_flash_message('success', 'Cập nhật vai trò hệ thống cho ' . htmlspecialchars($user_to_change['NAME']) . ' thành công!');
         $this->redirect(BASE_URL . '/member');
     }
 }

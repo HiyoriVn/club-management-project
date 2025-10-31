@@ -48,11 +48,13 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
 
                             <div style="text-align: right; margin-top: 10px;">
                                 <form action="<?php echo BASE_URL; ?>/project/deleteTask/<?php echo $data['project']['id']; ?>/<?php echo $task['id']; ?>" method="POST" style="display: inline-block; margin-left: 5px;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                     <button type="submit" style="background: none; border: none; color: red; cursor: pointer;" onclick="return confirm('Xóa Task?');">Xóa</button>
                                 </form>
 
                                 <?php if ($status_key != 'in_progress'): ?>
                                     <form action="<?php echo BASE_URL; ?>/project/moveTask/<?php echo $data['project']['id']; ?>/<?php echo $task['id']; ?>" method="POST" style="display: inline-block;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                         <input type="hidden" name="new_status" value="in_progress">
                                         <button type="submit" style="background: none; border: none; color: #007bff; cursor: pointer;">► Đang làm</button>
                                     </form>
@@ -60,6 +62,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
 
                                 <?php if ($status_key != 'done'): ?>
                                     <form action="<?php echo BASE_URL; ?>/project/moveTask/<?php echo $data['project']['id']; ?>/<?php echo $task['id']; ?>" method="POST" style="display: inline-block;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                         <input type="hidden" name="new_status" value="done">
                                         <button type="submit" style="background: none; border: none; color: green; cursor: pointer;">✔ Hoàn thành</button>
                                     </form>
@@ -67,6 +70,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
 
                                 <?php if ($status_key != 'todo'): ?>
                                     <form action="<?php echo BASE_URL; ?>/project/moveTask/<?php echo $data['project']['id']; ?>/<?php echo $task['id']; ?>" method="POST" style="display: inline-block;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                         <input type="hidden" name="new_status" value="todo">
                                         <button type="submit" style="background: none; border: none; color: #6c757d; cursor: pointer;">◄ Cần làm</button>
                                     </form>
@@ -90,6 +94,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
         <h3>Tạo Task mới (cho Dự án: <?php echo htmlspecialchars($data['project']['NAME']); ?>)</h3>
 
         <form action="<?php echo BASE_URL; ?>/project/storeTask/<?php echo $data['project']['id']; ?>" method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
             <div class="form-group" style="margin-bottom: 15px;">
                 <label for="title">Tiêu đề Task: <sup>*</sup></label>
                 <input type="text" name="title" id="title" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px;" required>

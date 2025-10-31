@@ -52,6 +52,13 @@ class AuthController extends Controller
         // Chỉ xử lý nếu request là POST
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
+            // Kiểm tra CSRF Token
+            if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+                set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+                $this->redirect(BASE_URL . '/auth/register'); // Quay lại form đăng ký
+                exit;
+            }
+            
             // 1. "Làm sạch" dữ liệu đầu vào (phòng chống XSS)
             // $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
@@ -106,11 +113,11 @@ class AuthController extends Controller
 
                 // Gọi Model để đăng ký
                 if ($this->userModel->register($data)) {
-                    // Đăng ký thành công, chuyển hướng về trang đăng nhập
-                    // (Sau này ta sẽ làm thêm Flash Message thông báo "Đăng ký thành công")
+                    set_flash_message('success', 'Đăng ký tài khoản thành công! Vui lòng đăng nhập.');
                     $this->redirect(BASE_URL . '/auth/login');
                 } else {
-                    die('Có lỗi xảy ra, vui lòng thử lại');
+                    set_flash_message('error', 'Có lỗi xảy ra, không thể đăng ký. Vui lòng thử lại.');
+                    $this->redirect(BASE_URL . '/auth/register'); // Quay lại form
                 }
             } else {
                 // Nếu có lỗi, tải lại view và hiển thị lỗi
@@ -152,6 +159,13 @@ class AuthController extends Controller
         // Chỉ xử lý nếu request là POST
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
+            // Kiểm tra CSRF Token
+            if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+                set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
+                $this->redirect(BASE_URL . '/auth/register'); // Quay lại form đăng ký
+                exit;
+            }
+            
             // Dữ liệu "thô" từ form
             $data = [
                 'title' => 'Đăng Nhập',
@@ -184,11 +198,10 @@ class AuthController extends Controller
 
                 if ($loggedInUser) {
                     // Đăng nhập thành công!
-                    // TẠO SESSION (Rất quan trọng)
                     $this->create_user_session($loggedInUser);
 
-                    // Chuyển hướng về trang chủ
-                    $this->redirect(BASE_URL);
+                    set_flash_message('success', 'Đăng nhập thành công! Chào mừng ' . htmlspecialchars($loggedInUser['NAME']) . '.');
+                    $this->redirect(BASE_URL); // Chuyển về trang chủ
                 } else {
                     // Mật khẩu sai
                     $data['password_err'] = 'Email hoặc mật khẩu không đúng';
@@ -219,7 +232,7 @@ class AuthController extends Controller
         // Hủy toàn bộ session
         session_destroy();
 
-        // Chuyển hướng về trang chủ
+        set_flash_message('info', 'Bạn đã đăng xuất khỏi hệ thống.');
         $this->redirect(BASE_URL);
     }
 

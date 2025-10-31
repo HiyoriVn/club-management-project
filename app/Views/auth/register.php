@@ -8,7 +8,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
     <p>Vui lòng điền thông tin để tạo tài khoản</p>
 
     <form action="<?php echo BASE_URL; ?>/auth/store" method="POST">
-
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
         <div class="form-group" style="margin-bottom: 15px;">
             <label for="name">Tên của bạn: <sup>*</sup></label>
             <input type="text" name="name" id="name" style="width: 100%; padding: 8px; border: 1px solid <?php echo !empty($data['name_err']) ? '#dc3545' : '#ccc'; ?>; border-radius: 3px;"
