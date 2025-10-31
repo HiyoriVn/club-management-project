@@ -101,6 +101,7 @@
             <?php if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) : ?>
                 <a href="<?php echo BASE_URL; ?>/department">Quản lý Ban</a>
                 <a href="<?php echo BASE_URL; ?>/member">Quản lý Thành viên</a>
+                <a href="<?php echo BASE_URL; ?>/transaction">Quản lý Quỹ</a>
             <?php endif; ?>
 
             <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin') : ?>
