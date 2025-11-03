@@ -1,162 +1,195 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="h-full bg-gray-100">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title><?php echo $data['title'] ?? 'CLB Management'; ?></title>
 
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.8/dist/trix.css">
+    <script type="text/javascript" src="https://unpkg.com/trix@2.0.8/dist/trix.umd.min.js" defer></script>
+
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <style>
-        /* Thêm cái này để reset */
-        * {
-            box-sizing: border-box;
+        /* Ghi đè style của Trix để nó giống input của Tailwind */
+        trix-editor {
+            background-color: white;
+            border-radius: 0.375rem;
+            /* rounded-md */
+            border-color: #D1D5DB;
+            /* border-gray-300 */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            /* shadow-sm */
         }
 
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-
-            /* --- THÊM 3 DÒNG SAU --- */
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            /* 100% Viewport Height */
+        trix-editor:focus-within {
+            --tw-ring-color: #2563EB;
+            /* focus:ring-blue-500 */
+            border-color: #2563EB;
         }
 
-        .navbar {
-            background-color: #333;
-            padding: 15px 30px;
-        }
-
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            padding: 14px 20px;
-        }
-
-        .navbar a:hover {
-            background-color: #575757;
-        }
-
-        .container {
-            padding: 20px 30px;
-
-            /* --- THÊM DÒNG SAU --- */
-            flex-grow: 1;
-            /* Bảo nó chiếm hết không gian thừa */
-        }
-
-        .footer {
-            background-color: #f1f1f1;
-            padding: 20px 30px;
-            text-align: center;
-            /* Bỏ margin-top đi cho đẹp */
-            /* margin-top: 20px; */
-        }
-
-        .flash-message {
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        .flash-message.success {
-            color: #155724;
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-        }
-
-        .flash-message.error {
-            color: #721c24;
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-        }
-
-        .flash-message.info {
-            color: #0c5460;
-            background-color: #d1ecf1;
-            border-color: #bee5eb;
+        /* Style cho thanh công cụ */
+        trix-toolbar.trix-button-group {
+            border-color: #D1D5DB;
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
 
-<body>
+<body class="h-full">
 
-    <nav class="navbar" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="flex h-full">
 
-        <div>
-            <a href="<?php echo BASE_URL; ?>">Trang Chủ</a>
-            <a href="<?php echo BASE_URL; ?>/dashboard">Dashboard</a>
-            <a href="<?php echo BASE_URL; ?>/event">Sự kiện</a>
-            <a href="<?php echo BASE_URL; ?>/announcement">Thông báo</a>
-            <a href="<?php echo BASE_URL; ?>/project">Dự án</a>
+        <div class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
+            <div class="flex flex-col flex-grow bg-white pt-5 shadow-lg">
 
-            <?php if (isset($_SESSION['user_id']) && $_SESSION['user_role'] != 'guest') : ?>
-                <a href="<?php echo BASE_URL; ?>/file">Tài liệu</a>
-            <?php endif; ?>
-
-            <?php if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) : ?>
-                <a href="<?php echo BASE_URL; ?>/department">Quản lý Ban</a>
-                <a href="<?php echo BASE_URL; ?>/member">Quản lý Thành viên</a>
-                <a href="<?php echo BASE_URL; ?>/transaction">Quản lý Quỹ</a>
-            <?php endif; ?>
-
-            <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin') : ?>
-                <a href="<?php echo BASE_URL; ?>/departmentrole">Quản lý Vai trò</a>
-                <a href="<?php echo BASE_URL; ?>/activitylog" style="color: #ffc107;">Nhật ký (Log)</a>
-            <?php endif; ?>
-        </div>
-
-        <div>
-            <?php if (isset($_SESSION['user_id'])) : ?>
-                <div class="notification-area" style="display: inline-block; position: relative; margin-right: 15px;">
-                    <a href="#" onclick="toggleNotificationDropdown()" style="color: white; text-decoration: none; font-size: 1.2em;" title="Thông báo">
-                        🔔 <?php if ($data['unread_notifications_count'] > 0): ?>
-                            <span style="background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7em; position: absolute; top: -5px; right: -8px;">
-                                <?php echo $data['unread_notifications_count']; ?>
-                            </span>
-                        <?php endif; ?>
-                    </a>
-                    <div id="notificationDropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); width: 300px; z-index: 100;">
-                        <div style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                            <strong>Thông báo</strong>
-                            <a href="#" style="font-size: 0.8em; color: #007bff;">Đánh dấu đã đọc</a>
-                        </div>
-                        <ul style="list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto;">
-                            <?php if (empty($data['latest_unread_notifications'])): ?>
-                                <li style="padding: 10px; text-align: center; color: #6c757d;">Không có thông báo mới.</li>
-                            <?php else: ?>
-                                <?php foreach ($data['latest_unread_notifications'] as $noti): ?>
-                                    <li style="padding: 10px; border-bottom: 1px solid #eee;">
-                                        <strong style="display: block; font-size: 0.9em;"><?php echo htmlspecialchars($noti['title']); ?></strong>
-                                        <span style="font-size: 0.85em; color: #555;"><?php echo htmlspecialchars($noti['message']); ?></span>
-                                        <small style="display: block; text-align: right; color: #999; font-size: 0.75em;"><?php echo date('d/m H:i', strtotime($noti['created_at'])); ?></small>
-                                    </li>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </ul>
-                        <div style="text-align: center; padding: 10px; border-top: 1px solid #eee;">
-                            <a href="#" style="font-size: 0.9em;">Xem tất cả</a>
-                        </div>
-                    </div>
+                <div class="flex items-center flex-shrink-0 px-4">
+                    <span class="text-2xl font-bold text-blue-600">CLB Management</span>
                 </div>
 
-                <span style="color: #fff; margin-right: 15px;">
-                    Xin chào, <strong><?php echo htmlspecialchars($_SESSION['user_name']); ?></strong>
-                    (<?php echo htmlspecialchars($_SESSION['user_role']); ?>)
-                </span>
-                <a href="<?php echo BASE_URL; ?>/profile" style="color: #ffc107;">Hồ sơ</a>
-                <a href="<?php echo BASE_URL; ?>/auth/logout">Đăng Xuất</a>
+                <div class="mt-5 flex-1 flex flex-col overflow-y-auto">
+                    <nav class="flex-1 px-2 space-y-1 pb-4">
 
-            <?php else : ?>
-                <a href="<?php echo BASE_URL; ?>/auth/login">Đăng Nhập</a>
-                <a href="<?php echo BASE_URL; ?>/auth/register">Đăng Ký</a>
-            <?php endif; ?>
+                        <a href="<?php echo BASE_URL; ?>/dashboard"
+                            class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <ion-icon name="home-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
+                            Dashboard
+                        </a>
+
+                        <a href="<?php echo BASE_URL; ?>/event"
+                            class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <ion-icon name="calendar-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
+                            Sự kiện
+                        </a>
+
+                        <a href="<?php echo BASE_URL; ?>/announcement"
+                            class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <ion-icon name="megaphone-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
+                            Thông báo
+                        </a>
+
+                        <a href="<?php echo BASE_URL; ?>/project"
+                            class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <ion-icon name="briefcase-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
+                            Dự án
+                        </a>
+
+                        <?php if (isset($_SESSION['user_id']) && $_SESSION['user_role'] != 'guest') : ?>
+                            <a href="<?php echo BASE_URL; ?>/file"
+                                class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                <ion-icon name="folder-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
+                                Tài liệu
+                            </a>
+                        <?php endif; ?>
+
+                        <?php if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) : ?>
+                            <div class="pt-4">
+                                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">Quản trị</span>
+                                <div class="mt-2 space-y-1">
+                                    <a href="<?php echo BASE_URL; ?>/department"
+                                        class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                        <ion-icon name="git-network-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
+                                        Quản lý Ban
+                                    </a>
+                                    <a href="<?php echo BASE_URL; ?>/member"
+                                        class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                        <ion-icon name="people-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
+                                        Quản lý Thành viên
+                                    </a>
+                                    <a href="<?php echo BASE_URL; ?>/transaction"
+                                        class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                        <ion-icon name="cash-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
+                                        Quản lý Quỹ
+                                    </a>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin') : ?>
+                            <div class="pt-4">
+                                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2">Hệ thống</span>
+                                <div class="mt-2 space-y-1">
+                                    <a href="<?php echo BASE_URL; ?>/departmentrole"
+                                        class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                        <ion-icon name="key-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
+                                        Quản lý Vai trò
+                                    </a>
+                                    <a href="<?php echo BASE_URL; ?>/activitylog"
+                                        class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                        <ion-icon name="clipboard-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
+                                        Nhật ký (Log)
+                                    </a>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </nav>
+                </div>
+
+                <?php if (isset($_SESSION['user_id'])) : ?>
+                    <div class="flex-shrink-0 flex border-t border-gray-200 p-4">
+                        <a href="<?php echo BASE_URL; ?>/profile" class="flex-shrink-0 w-full group block">
+                            <div class="flex items-center">
+                                <div>
+                                    <ion-icon name="person-circle-outline" class="h-10 w-10 text-gray-700"></ion-icon>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-700 group-hover:text-gray-900"><?php echo htmlspecialchars($_SESSION['user_name']); ?></p>
+                                    <p class="text-xs font-medium text-gray-500 group-hover:text-gray-700">Xem hồ sơ</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
 
-    </nav> <?php \display_flash_message(); ?>
+        <div class="flex flex-col flex-1 md:pl-64">
 
-    <div class="container">
+            <div class="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow-sm">
+                <div class="flex-1 px-4 flex justify-between sm:px-6 md:px-8">
+
+                    <div class="flex-1 flex">
+                        <form class="w-full flex md:ml-0" action="#" method="GET">
+                            <label for="search-field" class="sr-only">Tìm kiếm</label>
+                            <div class="relative w-full text-gray-400 focus-within:text-gray-600">
+                                <div class="absolute inset-y-0 left-0 flex items-center pointer-events-none">
+                                    <ion-icon name="search-outline" class="h-5 w-5"></ion-icon>
+                                </div>
+                                <input id="search-field" class="block w-full h-full pl-8 pr-3 py-2 border-transparent text-gray-900 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-0 focus:border-transparent sm:text-sm" placeholder="Tìm kiếm..." type="search" name="search">
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="ml-4 flex items-center md:ml-6">
+
+                        <button type="button" class="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <span class="sr-only">View notifications</span>
+                            <ion-icon name="notifications-outline" class="h-6 w-6"></ion-icon>
+                        </button>
+
+                        <?php if (!isset($_SESSION['user_id'])) : ?>
+                            <a href="<?php echo BASE_URL; ?>/auth/login" class="ml-4 text-sm font-medium text-gray-700 hover:text-gray-900">Đăng Nhập</a>
+                            <a href="<?php echo BASE_URL; ?>/auth/register" class="ml-4 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md">Đăng Ký</a>
+                        <?php else: ?>
+                            <a href="<?php echo BASE_URL; ?>/auth/logout" class="ml-4 text-sm font-medium text-gray-700 hover:text-gray-900">Đăng Xuất</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
+            <main class="flex-1">
+                <div class="py-6">
+
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                        <h1 class="text-2xl font-semibold text-gray-900">
+                            <?php echo $data['title'] ?? 'Dashboard'; ?>
+                        </h1>
+                    </div>
+
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 mt-5">
+
+                        <?php \display_flash_message(); ?>

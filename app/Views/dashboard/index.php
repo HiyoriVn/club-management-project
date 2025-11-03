@@ -1,31 +1,54 @@
 <?php
-// Nạp header
+// Nạp header MỚI
 require_once ROOT_PATH . '/app/Views/layout/header.php';
 ?>
 
-<h1><?php echo $data['title']; ?></h1>
-<p>Chào mừng <strong><?php echo htmlspecialchars($data['user_name']); ?></strong> đã quay trở lại!</p>
-<p>Bạn đang đăng nhập với vai trò: <strong><?php echo htmlspecialchars($data['user_role']); ?></strong></p>
+<div class="space-y-6">
 
-<hr>
-
-<h2>Nội dung Bảng điều khiển</h2>
-<p>Đây là khu vực chỉ dành cho thành viên đã đăng nhập.</p>
-
-<?php if ($data['user_role'] == 'admin' || $data['user_role'] == 'subadmin') : ?>
-    <div style="background: #fffbe6; border: 1px solid #ffe58f; padding: 15px; border-radius: 5px;">
-        <h3 style="margin-top: 0;">Khu vực Quản trị</h3>
-        <p>Vì bạn là 'admin' hoặc 'subadmin', bạn sẽ thấy được mục này.</p>
-        <ul>
-            <li><a href="#">Quản lý các Ban (Departments)</a></li>
-            <li><a href="#">Quản lý Thành viên</a></li>
-            <li><a href="#">Tạo Hoạt động mới</a></li>
-        </ul>
+    <div class="bg-white shadow rounded-lg p-6">
+        <p class="text-lg text-gray-700">
+            Chào mừng <strong><?php echo htmlspecialchars($data['user_name']); ?></strong> đã quay trở lại!
+        </p>
+        <p class="text-gray-600">
+            Bạn đang đăng nhập với vai trò:
+            <span class="font-medium text-indigo-600"><?php echo htmlspecialchars($data['user_role']); ?></span>
+        </p>
     </div>
-<?php endif; ?>
+
+    <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Nội dung Bảng điều khiển</h2>
+        <p class="text-gray-700">Đây là khu vực chỉ dành cho thành viên đã đăng nhập.</p>
+    </div>
+
+
+    <?php if ($data['user_role'] == 'admin' || $data['user_role'] == 'subadmin') : ?>
+
+        <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-yellow-900 mb-2">
+                Khu vực Quản trị
+            </h3>
+            <p class="text-yellow-800 mb-4">
+                Vì bạn là 'admin' hoặc 'subadmin', bạn sẽ thấy được mục này.
+            </p>
+
+            <div class="flex flex-wrap gap-3">
+                <a href="#" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
+                    Quản lý các Ban (Departments)
+                </a>
+                <a href="#" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
+                    Quản lý Thành viên
+                </a>
+                <a href="#" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors">
+                    Tạo Hoạt động mới
+                </a>
+            </div>
+        </div>
+    <?php endif; ?>
+
+</div>
 
 
 <?php
-// Nạp footer
+// Nạp footer MỚI
 require_once ROOT_PATH . '/app/Views/layout/footer.php';
 ?>

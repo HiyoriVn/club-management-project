@@ -1,106 +1,100 @@
 <?php
-// Nạp header, đây là file layout chung
+// Nạp header MỚI (đã có layout sidebar)
 require_once ROOT_PATH . '/app/Views/layout/header.php';
 ?>
 
-<div class="announcement-list" style="max-width: 800px; margin: 20px auto;">
-
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1><?php echo $data['title']; ?></h1>
-
-        <?php
-        // PHÂN QUYỀN: Chỉ Admin hoặc Subadmin mới thấy nút "Đăng Thông báo"
-        if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) :
-        ?>
-            <a href="<?php echo BASE_URL; ?>/announcement/create" style="background: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">
-                + Đăng Thông báo
-            </a>
-        <?php endif; // Hết phần kiểm tra vai trò 
-        ?>
-    </div>
+<div class="flex justify-end mb-5">
     <?php
-    // Kiểm tra xem mảng $data['announcements'] (từ Controller) có rỗng không
-    if (empty($data['announcements'])) :
+    // PHÂN QUYỀN: Chỉ Admin hoặc Subadmin mới thấy nút
+    if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) :
     ?>
-        <p style="text-align: center; color: #6c757d;">Chưa có thông báo nào.</p>
-    <?php
-    // Ngược lại, nếu có dữ liệu
-    else :
-    ?>
-        <?php
-        // Bắt đầu vòng lặp, lặp qua mỗi thông báo ($item)
-        foreach ($data['announcements'] as $item) :
-        ?>
-            <div class="card" style="border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <a href="<?php echo BASE_URL; ?>/announcement/create"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <ion-icon name="add-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
+            Đăng Thông báo
+        </a>
+    <?php endif; ?>
+</div>
 
-                <div class="card-header" style="background: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h3 style="margin: 0;"><?php echo htmlspecialchars($item['title']); ?></h3>
-                        <span style="font-size: 0.9em; color: #6c757d;">
-                            Đăng bởi <strong><?php echo htmlspecialchars($item['author_name']); ?></strong>
-                            vào <?php echo date('d/m/Y H:i', strtotime($item['created_at'])); ?>
-                        </span>
+<div class="space-y-6">
+
+    <?php if (empty($data['announcements'])) : ?>
+
+        <div class="bg-white shadow rounded-lg p-6 text-center">
+            <p class="text-gray-500">Chưa có thông báo nào.</p>
+        </div>
+
+    <?php else : ?>
+
+        <?php foreach ($data['announcements'] as $item) : ?>
+
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+
+                <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+
+                        <div>
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                <?php echo htmlspecialchars($item['title']); ?>
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Đăng bởi <strong><?php echo htmlspecialchars($item['author_name']); ?></strong>
+                                vào <?php echo date('d/m/Y H:i', strtotime($item['created_at'])); ?>
+                            </p>
+                        </div>
+
+                        <div class="flex-shrink-0">
+                            <?php
+                            $tag_text = 'Lỗi';
+                            $tag_class = 'bg-gray-100 text-gray-800'; // Mặc định
+
+                            if ($item['target_department_id'] !== NULL) {
+                                $tag_text = 'Ban: ' . htmlspecialchars($item['department_name']);
+                                $tag_class = 'bg-yellow-100 text-yellow-800'; // Tag Ban
+                            } elseif ($item['visibility'] == 'public') {
+                                $tag_text = 'Thông báo Chung';
+                                $tag_class = 'bg-green-100 text-green-800'; // Tag Public
+                            } else {
+                                $tag_text = 'Nội bộ CLB';
+                                $tag_class = 'bg-blue-100 text-blue-800'; // Tag Internal
+                            }
+                            ?>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium <?php echo $tag_class; ?>">
+                                <?php echo $tag_text; ?>
+                            </span>
+                        </div>
                     </div>
-
-                    <?php
-                    $tag_text = 'Lỗi';
-                    $tag_bg = '#f8f9fa';
-                    $tag_border = '#ddd';
-
-                    // 1. Ưu tiên cao nhất: Gửi cho Ban cụ thể
-                    if ($item['target_department_id'] !== NULL) {
-                        $tag_text = 'Ban: ' . htmlspecialchars($item['department_name']);
-                        $tag_bg = '#fffbe6'; // Vàng nhạt
-                        $tag_border = '#ffe58f';
-                    }
-                    // 2. Gửi Chung (Public)
-                    elseif ($item['visibility'] == 'public') {
-                        $tag_text = 'Thông báo Chung';
-                        $tag_bg = '#f0f9eb'; // Xanh lá nhạt
-                        $tag_border = '#d9f0c5';
-                    }
-                    // 3. Gửi Nội bộ (Internal)
-                    else {
-                        $tag_text = 'Nội bộ CLB';
-                        $tag_bg = '#e6f7ff'; // Xanh dương nhạt
-                        $tag_border = '#b3e0ff';
-                    }
-                    ?>
-                    <span style="font-weight: bold; font-size: 0.9em; padding: 5px 10px; border-radius: 5px; background: <?php echo $tag_bg; ?>; border: 1px solid <?php echo $tag_border; ?>;">
-                        <?php echo $tag_text; ?>
-                    </span>
                 </div>
 
-                <div class="card-body" style="padding: 15px;">
-                    <p><?php echo nl2br(htmlspecialchars($item['content'])); ?></p>
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="prose max-w-none text-gray-700">
+                        <?php echo $item['content']; ?>
+                    </div>
                 </div>
 
                 <?php
-                // PHÂN QUYỀN: Chỉ Admin/Subadmin mới thấy Sửa/Xóa
+                // Card Footer: Chứa nút Sửa/Xóa (chỉ Admin thấy)
                 if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) :
                 ?>
-                    <div class="card-footer" style="background: #f8f9fa; padding: 10px 15px; border-top: 1px solid #ddd; text-align: right;">
-                        <a href="<?php echo BASE_URL; ?>/announcement/edit/<?php echo $item['id']; ?>" style="color: blue; text-decoration: none; margin-right: 15px;">Sửa</a>
+                    <div class="px-4 py-4 sm:px-6 bg-gray-50 border-t border-gray-200 text-right space-x-3">
+                        <a href="<?php echo BASE_URL; ?>/announcement/edit/<?php echo $item['id']; ?>"
+                            class="text-sm font-medium text-yellow-600 hover:text-yellow-900">
+                            Sửa
+                        </a>
 
-                        <form action="<?php echo BASE_URL; ?>/announcement/destroy/<?php echo $item['id']; ?>" method="POST" style="display: inline-block; margin: 0;">
+                        <form action="<?php echo BASE_URL; ?>/announcement/destroy/<?php echo $item['id']; ?>" method="POST" class="inline">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                            <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; padding: 0;"
+                            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-900"
                                 onclick="return confirm('Bạn có chắc muốn xóa thông báo này?');">
                                 Xóa
                             </button>
                         </form>
                     </div>
-                <?php endif; // Hết phần kiểm tra vai trò 
-                ?>
-            </div>
-        <?php endforeach; // Hết vòng lặp 
+                <?php endif; ?>
+            </div> <?php endforeach; ?>
+    <?php endif; ?>
+
+</div> <?php
+        // Nạp footer MỚI
+        require_once ROOT_PATH . '/app/Views/layout/footer.php';
         ?>
-    <?php endif; // Hết kiểm tra mảng rỗng 
-    ?>
-
-</div>
-
-<?php
-// Nạp footer
-require_once ROOT_PATH . '/app/Views/layout/footer.php';
-?>

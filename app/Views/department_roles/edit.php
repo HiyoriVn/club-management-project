@@ -1,30 +1,85 @@
 <?php
-// Nạp header
+// Nạp header MỚI
 require_once ROOT_PATH . '/app/Views/layout/header.php';
 ?>
 
-<div class="role-edit" style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+<div class="bg-white shadow rounded-lg overflow-hidden max-w-3xl mx-auto">
 
-    <h2><?php echo $data['title']; ?>: <?php echo htmlspecialchars($data['name']); ?></h2>
-
-    <form action="<?php echo BASE_URL; ?>/departmentrole/update/<?php echo $data['id']; ?>" method="POST">
+    <form action="<?php echo BASE_URL; ?>/announcement/update/<?php echo $data['id']; ?>" method="POST">
         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label for="name">Tên Vai trò: <sup>*</sup></label>
-            <input type="text" name="name" id="name" style="width: 100%; padding: 8px; border: 1px solid <?php echo !empty($data['name_err']) ? '#dc3545' : '#ccc'; ?>; border-radius: 3px;"
-                value="<?php echo htmlspecialchars($data['name']); ?>">
-            <span style="color: #dc3545; font-size: 0.9em;"><?php echo $data['name_err']; ?></span>
-        </div>
 
-        <div class="form-row" style="display: flex; justify-content: space-between; align-items: center;">
-            <input type="submit" value="Cập nhật" style="background: #ffc107; color: black; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
-            <a href="<?php echo BASE_URL; ?>/departmentrole" style="color: #6c757d; text-decoration: none;">Hủy bỏ</a>
+        <div class="p-6">
+
+            <div class="mb-5">
+                <label for="form_title" class="block text-sm font-medium text-gray-700 mb-1">
+                    Tiêu đề: <sup>*</sup>
+                </label>
+                <input type="text" name="form_title" id="form_title"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm <?php echo !empty($data['title_err']) ? 'border-red-500' : ''; ?>"
+                    value="<?php echo htmlspecialchars($data['form_title'] ?? ''); ?>">
+                <span class="text-red-600 text-sm"><?php echo $data['title_err']; ?></span>
+            </div>
+
+            <div class="mb-5">
+                <label for="content" class="block text-sm font-medium text-gray-700 mb-1">
+                    Nội dung:
+                </label>
+                <input type="hidden" name="content" id="content"
+                    value="<?php echo htmlspecialchars($data['content'] ?? ''); ?>">
+
+                <trix-editor input="content" class="min-h-[200px]"></trix-editor>
+            </div>
+
+            <div class="mb-5">
+                <label for="target" class="block text-sm font-medium text-gray-700 mb-1">
+                    Gửi tới:
+                </label>
+                <select name="target" id="target"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+
+                    <?php
+                    // Logic "selected" cho dropdown (đã có trong file cũ của bạn)
+                    $current_target = 'internal';
+                    if ($data['target_department_id'] === NULL) {
+                        $current_target = $data['visibility']; // 'public' hoặc 'internal'
+                    } else {
+                        $current_target = $data['target_department_id']; // vd: '1', '2'
+                    }
+                    ?>
+
+                    <option value="public" <?php echo ($current_target == 'public') ? 'selected' : ''; ?>>
+                        -- Thông báo Chung --
+                    </option>
+                    <option value="internal" <?php echo ($current_target == 'internal') ? 'selected' : ''; ?>>
+                        -- Thông báo Nội bộ CLB --
+                    </option>
+                    <optgroup label="Chỉ gửi cho Ban Cụ thể:">
+                        <?php foreach ($data['all_departments'] as $dep) : ?>
+                            <option value="<?php echo $dep['id']; ?>" <?php echo ($current_target == $dep['id']) ? 'selected' : ''; ?>>
+                                Ban: <?php echo htmlspecialchars($dep['NAME']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                </select>
+            </div>
+
+        </div>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-4">
+            <a href="<?php echo BASE_URL; ?>/announcement"
+                class="text-sm font-medium text-gray-700 hover:text-gray-900">
+                Hủy bỏ
+            </a>
+            <button type="submit"
+                class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600">
+                <ion-icon name="save-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
+                Cập nhật
+            </button>
         </div>
 
     </form>
 </div>
 
 <?php
-// Nạp footer
+// Nạp footer MỚI
 require_once ROOT_PATH . '/app/Views/layout/footer.php';
 ?>

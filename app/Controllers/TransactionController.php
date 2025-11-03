@@ -142,10 +142,10 @@ class TransactionController extends Controller
         $data = [
             'title' => 'Chỉnh sửa Giao dịch',
             'id' => $id,
-            'type' => $tx['type'],
+            'type' => $tx['TYPE'],
             'amount' => $tx['amount'],
             'description' => $tx['description'],
-            'date' => $tx['date'],
+            'date' => $tx['DATE'],
             // Lỗi
             'amount_err' => '',
             'description_err' => '',
