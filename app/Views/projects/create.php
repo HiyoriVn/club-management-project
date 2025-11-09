@@ -1,76 +1,105 @@
 <?php
+// Nạp header MỚI
 require_once ROOT_PATH . '/app/Views/layout/header.php';
 ?>
 
-<div class="project-create" style="max-width: 800px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-
-    <h2><?php echo $data['title']; ?></h2>
+<div class="bg-white shadow rounded-lg overflow-hidden max-w-3xl mx-auto">
 
     <form action="<?php echo BASE_URL; ?>/project/store" method="POST">
         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label for="name">Tên Dự án: <sup>*</sup></label>
-            <input type="text" name="name" id="name" style="width: 100%; padding: 8px; border: 1px solid <?php echo !empty($data['name_err']) ? '#dc3545' : '#ccc'; ?>; border-radius: 3px;"
-                value="<?php echo htmlspecialchars($data['name']); ?>">
-            <span style="color: #dc3545; font-size: 0.9em;"><?php echo $data['name_err']; ?></span>
-        </div>
 
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label for="description">Mô tả:</label>
-            <textarea name="description" id="description" rows="5" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px;"><?php echo htmlspecialchars($data['description']); ?></textarea>
-        </div>
+        <div class="p-6">
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="start_date">Ngày bắt đầu:</label>
-                <input type="date" name="start_date" id="start_date" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px;"
-                    value="<?php echo htmlspecialchars($data['start_date']); ?>">
+            <div class="mb-5">
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                    Tên Dự án: <sup>*</sup>
+                </label>
+                <input type="text" name="name" id="name"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm <?php echo !empty($data['name_err']) ? 'border-red-500' : ''; ?>"
+                    value="<?php echo htmlspecialchars($data['name'] ?? ''); ?>">
+                <span class="text-red-600 text-sm"><?php echo $data['name_err']; ?></span>
             </div>
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="end_date">Ngày kết thúc:</label>
-                <input type="date" name="end_date" id="end_date" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px;"
-                    value="<?php echo htmlspecialchars($data['end_date']); ?>">
-            </div>
-        </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="status">Trạng thái:</label>
-                <select name="status" id="status" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; background: #fff;">
-                    <option value="planning" selected>Đang lên kế hoạch</option>
-                    <option value="in_progress">Đang thực hiện</option>
-                    <option value="completed">Đã hoàn thành</option>
-                    <option value="cancelled">Đã hủy</option>
-                </select>
+            <div class="mb-5">
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
+                    Mô tả:
+                </label>
+                <textarea name="description" id="description" rows="5"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"><?php echo htmlspecialchars($data['description'] ?? ''); ?></textarea>
             </div>
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="leader_id">Leader (Trưởng dự án):</label>
-                <select name="leader_id" id="leader_id" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; background: #fff;">
-                    <option value="">-- (Không có) --</option>
-                    <?php foreach ($data['all_users'] as $user) : ?>
-                        <option value="<?php echo $user['id']; ?>"><?php echo htmlspecialchars($user['NAME']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="department_id">Thuộc Ban:</label>
-                <select name="department_id" id="department_id" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; background: #fff;">
-                    <option value="">-- (Không thuộc Ban nào) --</option>
-                    <?php foreach ($data['all_departments'] as $dep) : ?>
-                        <option value="<?php echo $dep['id']; ?>"><?php echo htmlspecialchars($dep['NAME']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-        </div>
 
-        <div class="form-row">
-            <input type="submit" value="Tạo Dự án" style="background: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
-            <a href="<?php echo BASE_URL; ?>/project" style="color: #6c757d; text-decoration: none; margin-left: 15px;">Hủy bỏ</a>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày bắt đầu:
+                    </label>
+                    <input type="date" name="start_date" id="start_date"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        value="<?php echo htmlspecialchars($data['start_date'] ?? ''); ?>">
+                </div>
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">
+                        Ngày kết thúc:
+                    </label>
+                    <input type="date" name="end_date" id="end_date"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        value="<?php echo htmlspecialchars($data['end_date'] ?? ''); ?>">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-5">
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">
+                        Trạng thái:
+                    </label>
+                    <select name="status" id="status" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <option value="planning" selected>Đang lên kế hoạch</option>
+                        <option value="in_progress">Đang thực hiện</option>
+                        <option value="completed">Đã hoàn thành</option>
+                        <option value="cancelled">Đã hủy</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="leader_id" class="block text-sm font-medium text-gray-700 mb-1">
+                        Project Manager:
+                    </label>
+                    <select name="leader_id" id="leader_id" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <option value="">Không có</option>
+                        <?php foreach ($data['all_users'] as $user) : ?>
+                            <option value="<?php echo $user['id']; ?>"><?php echo htmlspecialchars($user['NAME']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label for="department_id" class="block text-sm font-medium text-gray-700 mb-1">
+                        Thuộc Ban:
+                    </label>
+                    <select name="department_id" id="department_id" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <option value="">Không thuộc Ban nào</option>
+                        <?php foreach ($data['all_departments'] as $dep) : ?>
+                            <option value="<?php echo $dep['id']; ?>"><?php echo htmlspecialchars($dep['NAME']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+        </div>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-4">
+            <a href="<?php echo BASE_URL; ?>/project"
+                class="text-sm font-medium text-gray-700 hover:text-gray-900">
+                Hủy bỏ
+            </a>
+            <button type="submit"
+                class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                <ion-icon name="add-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
+                Tạo Dự án
+            </button>
         </div>
 
     </form>
 </div>
 
 <?php
+// Nạp footer MỚI
 require_once ROOT_PATH . '/app/Views/layout/footer.php';
 ?>

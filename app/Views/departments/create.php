@@ -1,49 +1,65 @@
 <?php
-// Nạp header
+// Nạp header MỚI
 require_once ROOT_PATH . '/app/Views/layout/header.php';
 ?>
 
-<div class="department-create" style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-
-    <h2><?php echo $data['title']; ?></h2>
+<div class="bg-white shadow rounded-lg overflow-hidden max-w-3xl mx-auto">
 
     <form action="<?php echo BASE_URL; ?>/department/store" method="POST">
         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label for="name">Tên Ban: <sup>*</sup></label>
-            <input type="text" name="name" id="name" style="width: 100%; padding: 8px; border: 1px solid <?php echo !empty($data['name_err']) ? '#dc3545' : '#ccc'; ?>; border-radius: 3px;"
-                value="<?php echo htmlspecialchars($data['name']); ?>">
-            <span style="color: #dc3545; font-size: 0.9em;"><?php echo $data['name_err']; ?></span>
+
+        <div class="p-6">
+
+            <div class="mb-5">
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                    Tên Ban: <sup>*</sup>
+                </label>
+                <input type="text" name="name" id="name"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm <?php echo !empty($data['name_err']) ? 'border-red-500' : ''; ?>"
+                    value="<?php echo htmlspecialchars($data['name'] ?? ''); ?>">
+                <span class="text-red-600 text-sm"><?php echo $data['name_err']; ?></span>
+            </div>
+
+            <div class="mb-5">
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
+                    Mô tả:
+                </label>
+                <textarea name="description" id="description" rows="4"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"><?php echo htmlspecialchars($data['description'] ?? ''); ?></textarea>
+            </div>
+
+            <div class="mb-5">
+                <label for="parent_id" class="block text-sm font-medium text-gray-700 mb-1">
+                    Trực thuộc:
+                </label>
+                <select name="parent_id" id="parent_id"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    <option value="">Không</option>
+                    <?php foreach ($data['departments'] as $dep) : ?>
+                        <option value="<?php echo $dep['id']; ?>" <?php echo ($data['parent_id'] == $dep['id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($dep['NAME']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
         </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label for="description">Mô tả:</label>
-            <textarea name="description" id="description" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px;"><?php echo htmlspecialchars($data['description']); ?></textarea>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label for="parent_id">Trực thuộc (Ban cha):</label>
-            <select name="parent_id" id="parent_id" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 3px; background: #fff;">
-                <option value="">-- (Không có Ban cha - Cấp cao nhất) --</option>
-
-                <?php foreach ($data['departments'] as $dep) : ?>
-                    <option value="<?php echo $dep['id']; ?>" <?php echo ($data['parent_id'] == $dep['id']) ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($dep['NAME']); ?>
-                    </option>
-                <?php endforeach; ?>
-
-            </select>
-        </div>
-
-        <div class="form-row" style="display: flex; justify-content: space-between; align-items: center;">
-            <input type="submit" value="Lưu lại" style="background: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
-            <a href="<?php echo BASE_URL; ?>/department" style="color: #6c757d; text-decoration: none;">Hủy bỏ</a>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-4">
+            <a href="<?php echo BASE_URL; ?>/department"
+                class="text-sm font-medium text-gray-700 hover:text-gray-900">
+                Hủy bỏ
+            </a>
+            <button type="submit"
+                class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                <ion-icon name="add-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
+                Lưu lại
+            </button>
         </div>
 
     </form>
 </div>
 
 <?php
-// Nạp footer
+// Nạp footer MỚI
 require_once ROOT_PATH . '/app/Views/layout/footer.php';
 ?>

@@ -25,8 +25,8 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                 </label>
                 <select name="visibility" id="visibility"
                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                    <option value="internal" selected>Nội bộ (Chỉ Member thấy)</option>
-                    <option value="public">Công khai (Guest cũng thấy)</option>
+                    <option value="internal" selected>Sự kiện nội bộ</option>
+                    <option value="public">Sự kiện công khai</option>
                 </select>
             </div>
 
