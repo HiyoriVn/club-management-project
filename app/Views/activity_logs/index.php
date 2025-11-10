@@ -1,45 +1,56 @@
 <?php
-// Nạp header
+// Nạp header MỚI
 require_once ROOT_PATH . '/app/Views/layout/header.php';
 ?>
 
-<div class="log-list" style="max-width: 1000px; margin: 20px auto;">
-    <h1><?php echo $data['title']; ?></h1>
-    <p>Hiển thị 200 hành động mới nhất.</p>
-
-    <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd; font-size: 0.9em;">
-        <thead style="background-color: #f4f4f4;">
-            <tr>
-                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Thời gian</th>
-                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Người thực hiện</th>
-                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Hành động</th>
-                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Chi tiết</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (empty($data['logs'])) : ?>
+<div class="bg-white shadow overflow-hidden rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+            <?php echo $data['title']; ?>
+        </h3>
+        <p class="mt-1 text-sm text-gray-500">
+            Hiển thị 200 hành động mới nhất của hệ thống.
+        </p>
+    </div>
+    <div class="border-t border-gray-200 overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
                 <tr>
-                    <td colspan="4" style="padding: 10px; text-align: center;">Chưa có hoạt động nào được ghi lại.</td>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người thực hiện</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chi tiết</th>
                 </tr>
-            <?php else : ?>
-                <?php foreach ($data['logs'] as $log) : ?>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                <?php if (empty($data['logs'])) : ?>
                     <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd; width: 150px;"><?php echo date('d/m/Y H:i:s', strtotime($log['created_at'])); ?></td>
-                        <td style="padding: 8px; border: 1px solid #ddd; width: 120px;">
-                            <?php echo htmlspecialchars($log['user_name'] ?? 'Hệ thống'); ?>
+                        <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                            Chưa có hoạt động nào được ghi lại.
                         </td>
-                        <td style="padding: 8px; border: 1px solid #ddd; width: 150px;">
-                            <code style="background: #eee; padding: 2px 5px; border-radius: 3px;"><?php echo htmlspecialchars($log['ACTION']); ?></code>
-                        </td>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><?php echo htmlspecialchars($log['details']); ?></td>
                     </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </tbody>
-    </table>
+                <?php else : ?>
+                    <?php foreach ($data['logs'] as $log) : ?>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><?php echo date('d/m/Y H:i:s', strtotime($log['created_at'])); ?></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <?php echo htmlspecialchars($log['user_name'] ?? 'Hệ thống'); ?>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                    <?php echo htmlspecialchars($log['ACTION']); ?>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-700"><?php echo htmlspecialchars($log['details']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <?php
-// Nạp footer
+// Nạp footer MỚI
 require_once ROOT_PATH . '/app/Views/layout/footer.php';
 ?>

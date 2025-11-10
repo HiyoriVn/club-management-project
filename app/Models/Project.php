@@ -178,42 +178,51 @@ class Project
     }
 
     /**
-     * Lấy tất cả Tasks của 1 Dự án
-     * @param int $project_id
-     * @return array
+     * Lấy tất cả Tasks của 1 Dự án (đã nâng cấp)
+     * Dùng GROUP_CONCAT để lấy danh sách người được gán
      */
     public function getTasks($project_id)
     {
-        // JOIN với user (người được gán)
         $this->db->query("SELECT 
-                            t.*, 
-                            u.NAME as assigned_user_name
-                        FROM tasks t
-                        LEFT JOIN users u ON t.assigned_to = u.id
-                        WHERE t.project_id = :project_id
-                        ORDER BY t.created_at ASC");
+                        t.*, 
+                        GROUP_CONCAT(u.NAME SEPARATOR ', ') as assigned_user_name
+                    FROM tasks t
+                    LEFT JOIN task_assignees ta ON t.id = ta.task_id
+                    LEFT JOIN users u ON ta.user_id = u.id
+                    WHERE t.project_id = :project_id
+                    GROUP BY t.id -- Nhóm theo Task ID
+                    ORDER BY t.created_at ASC");
 
         $this->db->bind(':project_id', $project_id);
         return $this->db->resultSet();
     }
 
     /**
-     * Tạo một Task mới
+     * Tạo một Task mới (đã nâng cấp)
      * @param array $data
-     * @return boolean
+     * @return mixed Trả về ID của task mới nếu thành công, false nếu thất bại
      */
     public function createTask($data)
     {
-        $this->db->query("INSERT INTO tasks (project_id, title, description, assigned_to, due_date, status) 
-                         VALUES (:project_id, :title, :description, :assigned_to, :due_date, 'todo')");
+        $this->db->query("INSERT INTO tasks (project_id, title, description, status, start_date, due_date, color, attachment_link) 
+                     VALUES (:project_id, :title, :description, :status, :start_date, :due_date, :color, :attachment_link)");
 
         $this->db->bind(':project_id', $data['project_id']);
         $this->db->bind(':title', $data['title']);
         $this->db->bind(':description', $data['description']);
-        $this->db->bind(':assigned_to', empty($data['assigned_to']) ? null : $data['assigned_to']);
-        $this->db->bind(':due_date', empty($data['due_date']) ? null : $data['due_date']);
+        $this->db->bind(':status', $data['status']); // Nhận status từ Controller (vd: 'backlog')
 
-        return $this->db->execute();
+        $this->db->bind(':start_date', empty($data['start_date']) ? null : $data['start_date']);
+        $this->db->bind(':due_date', empty($data['due_date']) ? null : $data['due_date']);
+        $this->db->bind(':color', empty($data['color']) ? '#007bff' : $data['color']);
+        $this->db->bind(':attachment_link', $data['attachment_link']);
+
+        // Thực thi và trả về ID
+        if ($this->db->execute()) {
+            return $this->db->lastInsertId(); // Rất quan trọng: trả về ID
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -247,4 +256,28 @@ class Project
         $this->db->bind(':id', $task_id);
         return $this->db->execute();
     }
+    /**
+     * Gán 1 task cho 1 user (dùng cho bảng task_assignees)
+     * @param int $task_id
+     * @param int $user_id
+     * @return boolean
+     */
+    public function assignTaskToUser($task_id, $user_id)
+    {
+        $this->db->query("INSERT INTO task_assignees (task_id, user_id) 
+                         VALUES (:task_id, :user_id)");
+        $this->db->bind(':task_id', $task_id);
+        $this->db->bind(':user_id', $user_id);
+
+        try {
+            return $this->db->execute();
+        } catch (\PDOException $e) {
+            // Bẫy lỗi "Duplicate key" (nếu đã gán rồi)
+            if ($e->getCode() == 23000) {
+                return true; // Coi như thành công
+            }
+            return false;
+        }
+    }
 }
+

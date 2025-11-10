@@ -38,6 +38,52 @@
             margin-bottom: 0.5rem;
         }
     </style>
+    <style>
+        /* Ẩn thanh cuộn mặc định trên Firefox */
+        main.overflow-y-auto {
+            scrollbar-width: thin;
+            scrollbar-color: #a1a1aa #f1f5f9;
+            /* thumb track */
+        }
+
+        /* Style thanh cuộn cho Chrome, Edge, và Safari (Webkit) */
+
+        /* 1. Style thanh cuộn DỌC (của <main>) */
+        main.overflow-y-auto::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        /* 2. Style thanh cuộn NGANG (của Bảng Kanban) */
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 8px;
+            /* Làm thanh cuộn ngang mỏng lại */
+        }
+
+        /* 3. Style cái thanh trượt (thumb) */
+        main.overflow-y-auto::-webkit-scrollbar-thumb,
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background-color: #a1a1aa;
+            /* Màu xám nhạt (zinc-400) */
+            border-radius: 10px;
+            border: 2px solid transparent;
+            /* Đổi thành transparent */
+            background-clip: content-box;
+            /* Fix lỗi padding */
+        }
+
+        /* 4. Style khi hover vào thanh trượt */
+        main.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+            background-color: #71717a;
+            /* Xám đậm hơn (zinc-500) */
+        }
+
+        /* 5. Style cái rãnh (track) - làm trong suốt để "tự ẩn" */
+        main.overflow-y-auto::-webkit-scrollbar-track,
+        .overflow-x-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+    </style>
 </head>
 
 <body class="h-full">
@@ -147,7 +193,7 @@
             </div>
         </div>
 
-        <div class="flex flex-col flex-1 md:pl-64">
+        <div class="flex flex-col flex-1 md:pl-64 overflow-hidden">
 
             <div class="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow-sm">
                 <div class="flex-1 px-4 flex justify-between sm:px-6 md:px-8">
@@ -181,15 +227,15 @@
                 </div>
             </div>
 
-            <main class="flex-1">
+            <main class="flex-1 overflow-y-auto">
                 <div class="py-6">
 
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                    <div class="px-4 sm:px-6 md:px-8">
                         <h1 class="text-2xl font-semibold text-gray-900">
                             <?php echo $data['title'] ?? 'Dashboard'; ?>
                         </h1>
                     </div>
 
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 mt-5">
+                    <div class="px-4 sm:px-6 md:px-8 mt-5">
 
                         <?php \display_flash_message(); ?>

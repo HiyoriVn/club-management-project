@@ -59,7 +59,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                 $tag_class = 'bg-blue-100 text-blue-800'; // Tag Internal
                             }
                             ?>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium <?php echo $tag_class; ?>">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold <?php echo $tag_class; ?>">
                                 <?php echo $tag_text; ?>
                             </span>
                         </div>
@@ -78,13 +78,14 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                 ?>
                     <div class="px-4 py-4 sm:px-6 bg-gray-50 border-t border-gray-200 text-right space-x-3">
                         <a href="<?php echo BASE_URL; ?>/announcement/edit/<?php echo $item['id']; ?>"
-                            class="text-sm font-medium text-yellow-600 hover:text-yellow-900">
+                            class="inline-flex justify-center items-center w-16 h-8 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600">
                             Sửa
                         </a>
 
                         <form action="<?php echo BASE_URL; ?>/announcement/destroy/<?php echo $item['id']; ?>" method="POST" class="inline">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-900"
+                            <button type="submit"
+                                class="inline-flex justify-center items-center w-16 h-8 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
                                 onclick="return confirm('Bạn có chắc muốn xóa thông báo này?');">
                                 Xóa
                             </button>

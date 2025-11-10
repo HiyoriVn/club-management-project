@@ -78,14 +78,12 @@ function log_activity($action, $details)
 function purify_html($dirty_html)
 {
     // 1. Đường dẫn đến file autoload của HTMLPurifier
-    $purifier_path = ROOT_PATH . '/app/Libs/htmlpurifier-4.15.0/library/HTMLPurifier.autoload.php';
-
+    $purifier_path = ROOT_PATH . '/app/libs/htmlpurifier-4.15.0/library/HTMLPurifier.auto.php';
     if (!file_exists($purifier_path)) {
         // Nếu không tìm thấy, trả về lỗi thay vì làm sập trang
         return '<p style="color:red; font-weight:bold;">Lỗi: Không tìm thấy thư viện HTMLPurifier. Hãy kiểm tra lại đường dẫn.</p>';
     }
 
-    // Sửa lại dòng này:
     require_once $purifier_path;
 
     // 2. Cấu hình

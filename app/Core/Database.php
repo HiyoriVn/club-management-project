@@ -110,4 +110,13 @@ class Database
     {
         return $this->stmt->rowCount();
     }
+    /**
+     * 11. Lấy ID của dòng vừa INSERT
+     * (HÀM MỚI ĐỂ SỬA LỖI FATAL)
+     */
+    public function lastInsertId()
+    {
+        // Gọi hàm lastInsertId() gốc của PDO
+        return $this->pdo->lastInsertId();
+    }
 }

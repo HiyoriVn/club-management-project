@@ -5,67 +5,24 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
 
 <div class="bg-white shadow rounded-lg overflow-hidden max-w-3xl mx-auto">
 
-    <form action="<?php echo BASE_URL; ?>/announcement/update/<?php echo $data['id']; ?>" method="POST">
+    <form action="<?php echo BASE_URL; ?>/departmentrole/update/<?php echo $data['id']; ?>" method="POST">
         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
         <div class="p-6">
 
             <div class="mb-5">
-                <label for="form_title" class="block text-sm font-medium text-gray-700 mb-1">
-                    Tiêu đề: <sup>*</sup>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                    Tên Vai trò: <sup>*</sup>
                 </label>
-                <input type="text" name="form_title" id="form_title"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm <?php echo !empty($data['title_err']) ? 'border-red-500' : ''; ?>"
-                    value="<?php echo htmlspecialchars($data['form_title'] ?? ''); ?>">
-                <span class="text-red-600 text-sm"><?php echo $data['title_err']; ?></span>
-            </div>
-
-            <div class="mb-5">
-                <label for="content" class="block text-sm font-medium text-gray-700 mb-1">
-                    Nội dung:
-                </label>
-                <input type="hidden" name="content" id="content"
-                    value="<?php echo htmlspecialchars($data['content'] ?? ''); ?>">
-
-                <trix-editor input="content" class="min-h-[200px]"></trix-editor>
-            </div>
-
-            <div class="mb-5">
-                <label for="target" class="block text-sm font-medium text-gray-700 mb-1">
-                    Gửi tới:
-                </label>
-                <select name="target" id="target"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-
-                    <?php
-                    // Logic "selected" cho dropdown (đã có trong file cũ của bạn)
-                    $current_target = 'internal';
-                    if ($data['target_department_id'] === NULL) {
-                        $current_target = $data['visibility']; // 'public' hoặc 'internal'
-                    } else {
-                        $current_target = $data['target_department_id']; // vd: '1', '2'
-                    }
-                    ?>
-
-                    <option value="public" <?php echo ($current_target == 'public') ? 'selected' : ''; ?>>
-                        -- Thông báo Chung --
-                    </option>
-                    <option value="internal" <?php echo ($current_target == 'internal') ? 'selected' : ''; ?>>
-                        -- Thông báo Nội bộ CLB --
-                    </option>
-                    <optgroup label="Chỉ gửi cho Ban Cụ thể:">
-                        <?php foreach ($data['all_departments'] as $dep) : ?>
-                            <option value="<?php echo $dep['id']; ?>" <?php echo ($current_target == $dep['id']) ? 'selected' : ''; ?>>
-                                Ban: <?php echo htmlspecialchars($dep['NAME']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </optgroup>
-                </select>
+                <input type="text" name="name" id="name"
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm <?php echo !empty($data['name_err']) ? 'border-red-500' : ''; ?>"
+                    value="<?php echo htmlspecialchars($data['name'] ?? ''); ?>">
+                <span class="text-red-600 text-sm"><?php echo $data['name_err']; ?></span>
             </div>
 
         </div>
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-4">
-            <a href="<?php echo BASE_URL; ?>/announcement"
+            <a href="<?php echo BASE_URL; ?>/departmentrole"
                 class="text-sm font-medium text-gray-700 hover:text-gray-900">
                 Hủy bỏ
             </a>
