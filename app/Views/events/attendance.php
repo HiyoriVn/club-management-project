@@ -61,7 +61,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                     <form action="<?php echo BASE_URL; ?>/event/checkin/<?php echo $data['event']['id']; ?>/<?php echo $p['attendance_id']; ?>" method="POST" class="inline">
                                         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                         <button type="submit"
-                                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                                            class="btn btn-success">
                                             Check-in
                                         </button>
                                     </form>
@@ -69,7 +69,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                     <form action="<?php echo BASE_URL; ?>/event/undocheckin/<?php echo $data['event']['id']; ?>/<?php echo $p['attendance_id']; ?>" method="POST" class="inline">
                                         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                         <button type="submit"
-                                            class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+                                            class="btn btn-secondary-outline">
                                             Hoàn tác
                                         </button>
                                     </form>

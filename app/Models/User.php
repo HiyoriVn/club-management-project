@@ -207,4 +207,70 @@ class User
 
         return $this->db->execute();
     }
+
+    /**
+     * HÀM MỚI 1: Tìm user bằng email
+     * (AuthController cần hàm này để kiểm tra email có tồn tại không)
+     */
+    public function findByEmail($email)
+    {
+        $this->db->query("SELECT * FROM users WHERE email = :email");
+        $this->db->bind(':email', $email);
+        return $this->db->single();
+    }
+
+    /**
+     * HÀM MỚI 2: Cập nhật token reset mật khẩu
+     * (Lưu token và thời gian hết hạn vào CSDL)
+     */
+    public function updateResetToken($userId, $token, $expires)
+    {
+        $sql = "UPDATE users SET 
+                password_reset_token = :token, 
+                password_reset_expires = :expires 
+                WHERE id = :id";
+
+        $this->db->query($sql);
+        $this->db->bind(':token', $token);
+        $this->db->bind(':expires', $expires);
+        $this->db->bind(':id', $userId);
+
+        return $this->db->execute();
+    }
+
+    /**
+     * HÀM MỚI 3: Tìm user bằng token (và token CÒN HẠN)
+     * (AuthController dùng hàm này để xác minh link trong email)
+     */
+    public function findByResetToken($token)
+    {
+        // Câu lệnh SQL này RẤT QUAN TRỌNG:
+        // Nó chỉ tìm token VÀ token đó còn hạn (chưa quá NOW())
+        $sql = "SELECT * FROM users 
+                WHERE password_reset_token = :token 
+                AND password_reset_expires > NOW()";
+
+        $this->db->query($sql);
+        $this->db->bind(':token', $token);
+        return $this->db->single();
+    }
+
+    /**
+     * HÀM MỚI 4: Cập nhật mật khẩu VÀ xóa token
+     * (Sau khi user đặt mật khẩu mới thành công, ta xóa token đi)
+     */
+    public function updatePassword($userId, $newPassword)
+    {
+        $sql = "UPDATE users SET 
+                password = :password, 
+                password_reset_token = NULL, 
+                password_reset_expires = NULL 
+                WHERE id = :id";
+
+        $this->db->query($sql);
+        $this->db->bind(':password', $newPassword);
+        $this->db->bind(':id', $userId);
+
+        return $this->db->execute();
+    }
 }

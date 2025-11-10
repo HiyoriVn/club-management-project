@@ -8,7 +8,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
     if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) :
     ?>
         <a href="<?php echo BASE_URL; ?>/event/create"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            class="btn btn-primary">
             <ion-icon name="add-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
             Tạo Sự kiện mới
         </a>
@@ -65,19 +65,19 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                 <?php if ($is_registered) : ?>
                                     <button type="submit"
-                                        class="w-full inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+                                        class="w-full btn btn-danger"
                                         onclick="return confirm('Bạn có chắc muốn HỦY đăng ký sự kiện này?');">
                                         Hủy đăng ký
                                     </button>
                                 <?php else : ?>
                                     <button type="submit"
-                                        class="w-full inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                                        class="w-full btn btn-success">
                                         Đăng ký tham gia
                                     </button>
                                 <?php endif; ?>
                             </form>
                         <?php else : ?>
-                            <a href="<?php echo BASE_URL; ?>/auth/login" class="w-full inline-flex justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+                            <a href="<?php echo BASE_URL; ?>/auth/login" class="w-full btn btn-primary">
                                 Đăng nhập để đăng ký
                             </a>
                         <?php endif; ?>
@@ -85,16 +85,16 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                         <?php if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) : ?>
                             <div class="flex justify-between items-center pt-2">
                                 <a href="<?php echo BASE_URL; ?>/event/attendance/<?php echo $event['id']; ?>"
-                                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-cyan-600 hover:bg-cyan-700">
+                                    class="btn btn-success">
                                     <ion-icon name="checkmark-done-outline" class="-ml-0.5 mr-1.5 h-4 w-4"></ion-icon>
                                     Điểm danh
                                 </a>
                                 <div class="space-x-3">
-                                    <a href="<?php echo BASE_URL; ?>/event/edit/<?php echo $event['id']; ?>" class="text-sm font-medium text-yellow-600 hover:text-yellow-900">Sửa</a>
+                                    <a href="<?php echo BASE_URL; ?>/event/edit/<?php echo $event['id']; ?>" class="btn btn-warning">Sửa</a>
 
                                     <form action="<?php echo BASE_URL; ?>/event/destroy/<?php echo $event['id']; ?>" method="POST" class="inline">
                                         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                                        <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-900"
+                                        <button type="submit" class="btn btn-danger"
                                             onclick="return confirm('Bạn có chắc muốn xóa Sự kiện [<?php echo htmlspecialchars(addslashes($event['title'])); ?>]?');">
                                             Xóa
                                         </button>

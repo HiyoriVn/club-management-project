@@ -16,7 +16,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vai trò Hệ thống</th>
@@ -26,9 +26,10 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
+                <?php $stt = 1; ?>
                 <?php foreach ($data['users'] as $user) : ?>
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?php echo $user['id']; ?></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><?php echo $stt; ?></td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?php echo htmlspecialchars($user['NAME']); ?></td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><?php echo htmlspecialchars($user['email']); ?></td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -57,7 +58,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
 
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                             <a href="<?php echo BASE_URL; ?>/member/manage/<?php echo $user['id']; ?>"
-                                class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                                class="btn btn-primary">
                                 Phân quyền (Ban)
                             </a>
 
@@ -77,13 +78,14 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                         <option value="subadmin" <?php echo ($user['system_role'] == 'subadmin') ? 'selected' : ''; ?>>Sub-Admin</option>
                                     </select>
                                     <button type="submit"
-                                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-cyan-600 hover:bg-cyan-700">
+                                        class="btn btn-secondary">
                                         Lưu
                                     </button>
                                 </form>
                             <?php endif; ?>
                         </td>
                     </tr>
+                    <?php $stt++; ?>
                 <?php endforeach; ?>
             </tbody>
         </table>

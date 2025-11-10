@@ -47,8 +47,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
 
                 <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 text-right">
                     <button type="submit"
-                        class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
-                        <ion-icon name="add-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
+                        class="btn btn-success">
                         Thêm vào Dự án
                     </button>
                 </div>
@@ -89,7 +88,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <form action="<?php echo BASE_URL; ?>/project/removeMember/<?php echo $data['project']['id']; ?>/<?php echo $member['assignment_id']; ?>" method="POST" class="inline">
                                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                                            <button type="submit" class="text-red-600 hover:text-red-900"
+                                            <button type="submit" class="btn-action btn-danger"
                                                 onclick="return confirm('Bạn có chắc muốn xóa [<?php echo htmlspecialchars(addslashes($member['NAME'])); ?>] khỏi dự án?');">
                                                 Xóa
                                             </button>

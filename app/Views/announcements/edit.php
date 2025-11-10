@@ -48,10 +48,10 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                     ?>
 
                     <option value="public" <?php echo ($current_target == 'public') ? 'selected' : ''; ?>>
-                        -- Thông báo Chung (Guest cũng thấy) --
+                    Thông báo Công khai
                     </option>
                     <option value="internal" <?php echo ($current_target == 'internal') ? 'selected' : ''; ?>>
-                        -- Thông báo Nội bộ CLB (Chỉ Member) --
+                    Thông báo Nội bộ CLB
                     </option>
                     <optgroup label="Chỉ gửi cho Ban Cụ thể:">
                         <?php foreach ($data['all_departments'] as $dep) : ?>
@@ -66,11 +66,11 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
         </div>
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-4">
             <a href="<?php echo BASE_URL; ?>/announcement"
-                class="text-sm font-medium text-gray-700 hover:text-gray-900">
+                class="btn btn-secondary-outline">
                 Hủy bỏ
             </a>
             <button type="submit"
-                class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600">
+                class="btn btn-success">
                 <ion-icon name="save-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
                 Cập nhật
             </button>

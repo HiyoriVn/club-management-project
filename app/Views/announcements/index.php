@@ -9,7 +9,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
     if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) :
     ?>
         <a href="<?php echo BASE_URL; ?>/announcement/create"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            class="btn btn-primary">
             <ion-icon name="add-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
             Đăng Thông báo
         </a>
@@ -78,14 +78,14 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                 ?>
                     <div class="px-4 py-4 sm:px-6 bg-gray-50 border-t border-gray-200 text-right space-x-3">
                         <a href="<?php echo BASE_URL; ?>/announcement/edit/<?php echo $item['id']; ?>"
-                            class="inline-flex justify-center items-center w-16 h-8 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600">
+                            class="btn-action btn-warning">
                             Sửa
                         </a>
 
                         <form action="<?php echo BASE_URL; ?>/announcement/destroy/<?php echo $item['id']; ?>" method="POST" class="inline">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                             <button type="submit"
-                                class="inline-flex justify-center items-center w-16 h-8 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+                                class="btn-action btn-danger"
                                 onclick="return confirm('Bạn có chắc muốn xóa thông báo này?');">
                                 Xóa
                             </button>

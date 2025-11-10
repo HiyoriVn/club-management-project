@@ -61,7 +61,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                 </div>
                 <div>
                     <label for="leader_id" class="block text-sm font-medium text-gray-700 mb-1">
-                        Leader (Trưởng dự án):
+                        Project Manager:
                     </label>
                     <select name="leader_id" id="leader_id" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                         <option value="">Không có</option>
@@ -90,11 +90,11 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
         </div>
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-4">
             <a href="<?php echo BASE_URL; ?>/project"
-                class="text-sm font-medium text-gray-700 hover:text-gray-900">
+                class="btn btn-secondary-outline">
                 Hủy bỏ
             </a>
             <button type="submit"
-                class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600">
+                class="btn btn-success">
                 <ion-icon name="save-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
                 Cập nhật
             </button>

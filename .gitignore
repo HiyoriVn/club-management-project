@@ -1,0 +1,5 @@
+# Bỏ qua thư mục vendor
+/vendor
+
+# Bỏ qua file chứa bí mật
+.env

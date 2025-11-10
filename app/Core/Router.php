@@ -15,16 +15,12 @@ class Router
         $url = $this->getUrl();
 
         // --- 1. Xử lý Controller ---
-        // Lấy phần tử đầu tiên của URL làm tên Controller
-        // ucwords: Viết hoa chữ cái đầu (vd: home -> Home)
         if (isset($url[0])) {
             $controllerName = ucwords($url[0]) . 'Controller';
             $controllerPath = ROOT_PATH . '/app/Controllers/' . $controllerName . '.php';
 
-            // Kiểm tra file Controller có tồn tại không
             if (file_exists($controllerPath)) {
                 $this->currentController = $controllerName;
-                // Xóa phần tử này khỏi mảng url
                 unset($url[0]);
             }
         }
@@ -32,7 +28,7 @@ class Router
         // Nạp Controller
         require_once ROOT_PATH . '/app/Controllers/' . $this->currentController . '.php';
 
-        // Khởi tạo Controller (thêm namespace đầy đủ)
+        // Khởi tạo Controller 
         $controllerClassName = 'App\\Controllers\\' . $this->currentController;
         $this->currentController = new $controllerClassName();
 
@@ -41,7 +37,6 @@ class Router
             // Kiểm tra xem method có tồn tại trong Controller không
             if (method_exists($this->currentController, $url[1])) {
                 $this->currentMethod = $url[1];
-                // Xóa phần tử này khỏi mảng url
                 unset($url[1]);
             }
         }
@@ -61,11 +56,8 @@ class Router
     protected function getUrl()
     {
         if (isset($_GET['url'])) {
-            // 1. Xóa dấu / ở cuối
             $url = rtrim($_GET['url'], '/');
-            // 2. Lọc các ký tự không hợp lệ
             $url = filter_var($url, FILTER_SANITIZE_URL);
-            // 3. Tách chuỗi bằng dấu / thành mảng
             $url = explode('/', $url);
             return $url;
         }

@@ -6,7 +6,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
 <div class="flex justify-end mb-5">
     <?php if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) : ?>
         <a href="<?php echo BASE_URL; ?>/project/create"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            class="btn btn-primary">
             <ion-icon name="add-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
             Tạo Dự án mới
         </a>
@@ -84,14 +84,14 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                                 <?php if (isset($_SESSION['user_role']) && ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin')) : ?>
                                     <a href="<?php echo BASE_URL; ?>/project/manage/<?php echo $project['id']; ?>"
-                                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-cyan-600 hover:bg-cyan-700">
-                                        Quản lý TV
+                                        class="btn-action btn-secondary">
+                                        Quản lý
                                     </a>
-                                    <a href="<?php echo BASE_URL; ?>/project/edit/<?php echo $project['id']; ?>" class="text-yellow-600 hover:text-yellow-900">Sửa</a>
+                                    <a href="<?php echo BASE_URL; ?>/project/edit/<?php echo $project['id']; ?>" class="btn-action btn-warning">Sửa</a>
 
                                     <form action="<?php echo BASE_URL; ?>/project/destroy/<?php echo $project['id']; ?>" method="POST" class="inline">
                                         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                                        <button type="submit" class="text-red-600 hover:text-red-900"
+                                        <button type="submit" class="btn-action btn-danger"
                                             onclick="return confirm('Bạn có chắc muốn xóa Dự án [<?php echo htmlspecialchars(addslashes($project['NAME'])); ?>]?');">
                                             Xóa
                                         </button>

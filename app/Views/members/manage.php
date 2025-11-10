@@ -18,7 +18,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                         <div>
                             <label for="department_id" class="block text-sm font-medium text-gray-700 mb-1">1. Chọn Ban:</label>
                             <select name="department_id" id="department_id" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
-                                <option value="">-- Chọn một Ban --</option>
+                                <option value="">Chọn một Ban</option>
                                 <?php foreach ($data['all_departments'] as $dep): ?>
                                     <option value="<?php echo $dep['id']; ?>"><?php echo htmlspecialchars($dep['NAME']); ?></option>
                                 <?php endforeach; ?>
@@ -27,7 +27,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                         <div>
                             <label for="role_id" class="block text-sm font-medium text-gray-700 mb-1">2. Chọn Vai trò:</label>
                             <select name="role_id" id="role_id" class="block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
-                                <option value="">-- Chọn một Vai trò --</option>
+                                <option value="">Chọn Vai trò</option>
                                 <?php foreach ($data['all_roles'] as $role): ?>
                                     <option value="<?php echo $role['id']; ?>"><?php echo htmlspecialchars($role['NAME']); ?></option>
                                 <?php endforeach; ?>
@@ -80,7 +80,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <form action="<?php echo BASE_URL; ?>/member/revoke/<?php echo $data['user']['id']; ?>/<?php echo $role['assignment_id']; ?>" method="POST" class="inline">
                                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                                            <button type="submit" class="text-red-600 hover:text-red-900"
+                                            <button type="submit" class="btn-action btn-danger"
                                                     onclick="return confirm('Bạn có chắc muốn thu hồi vai trò [<?php echo htmlspecialchars(addslashes($role['role_name'])); ?>] tại [<?php echo htmlspecialchars(addslashes($role['department_name'])); ?>]?');">
                                                 Thu hồi
                                             </button>

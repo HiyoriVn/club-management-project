@@ -4,7 +4,6 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-// Nạp cả 3 Model
 use App\Models\User;
 use App\Models\Department;
 use App\Models\DepartmentRole;

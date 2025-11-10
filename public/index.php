@@ -16,7 +16,16 @@ error_reporting(E_ALL);
 
 // 1. Nạp file cấu hình
 require_once '../config/config.php';
-
+require_once ROOT_PATH . '/vendor/autoload.php';
+// Nó sẽ đọc file .env ở thư mục gốc (ROOT_PATH)
+try {
+    $dotenv = Dotenv\Dotenv::createImmutable(ROOT_PATH);
+    $dotenv->load();
+} catch (\Dotenv\Exception\InvalidPathException $e) {
+    // Xử lý nếu file .env không tìm thấy 
+    error_log('Lỗi: Không tìm thấy file .env. ' . $e->getMessage());
+    die('Lỗi cấu hình hệ thống. Vui lòng kiểm tra file .env');
+}
 // 2. Đăng ký Autoloader (Trình tự động nạp lớp)
 // Khi em "new App\Core\Router()", nó sẽ tự động nạp file "app/Core/Router.php"
 spl_autoload_register(function ($className) {

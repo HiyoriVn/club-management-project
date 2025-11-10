@@ -7,7 +7,7 @@
     <title><?php echo $data['title'] ?? 'CLB Management'; ?></title>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-
+    <link rel="stylesheet" type="text/css" href="<?php echo BASE_URL; ?>/css/custom.css">
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.8/dist/trix.css">
     <script type="text/javascript" src="https://unpkg.com/trix@2.0.8/dist/trix.umd.min.js" defer></script>
 
@@ -167,7 +167,7 @@
                                     <a href="<?php echo BASE_URL; ?>/activitylog"
                                         class="text-gray-600 hover:bg-gray-50 hover:text-gray-900 group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                         <ion-icon name="clipboard-outline" class="text-gray-400 group-hover:text-gray-500 mr-3 flex-shrink-0 h-6 w-6"></ion-icon>
-                                        Nhật ký (Log)
+                                        Nhật ký hoạt động
                                     </a>
                                 </div>
                             </div>
@@ -218,10 +218,10 @@
                         </button>
 
                         <?php if (!isset($_SESSION['user_id'])) : ?>
-                            <a href="<?php echo BASE_URL; ?>/auth/login" class="ml-4 text-sm font-medium text-gray-700 hover:text-gray-900">Đăng Nhập</a>
-                            <a href="<?php echo BASE_URL; ?>/auth/register" class="ml-4 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md">Đăng Ký</a>
+                            <a href="<?php echo BASE_URL; ?>/auth/login" class="btn btn-secondary-outline ml-4">Đăng Nhập</a>
+                            <a href="<?php echo BASE_URL; ?>/auth/register" class="btn btn-primary ml-4">Đăng Ký</a>
                         <?php else: ?>
-                            <a href="<?php echo BASE_URL; ?>/auth/logout" class="ml-4 text-sm font-medium text-gray-700 hover:text-gray-900">Đăng Xuất</a>
+                            <a href="<?php echo BASE_URL; ?>/auth/logout" class="btn btn-secondary-outline ml-4">Đăng Xuất</a>
                         <?php endif; ?>
                     </div>
                 </div>

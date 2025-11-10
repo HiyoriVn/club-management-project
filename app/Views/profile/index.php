@@ -85,7 +85,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
         </div>
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 text-right">
             <button type="submit"
-                class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                class="btn btn-success">
                 Lưu thay đổi
             </button>
         </div>

@@ -50,7 +50,7 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                     Đã có tài khoản?
                 </a>
                 <button type="submit"
-                    class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                    class="btn btn-primary w-full">
                     Đăng Ký
                 </button>
             </div>

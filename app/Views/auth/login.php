@@ -35,8 +35,11 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                 <a href="<?php echo BASE_URL; ?>/auth/register" class="text-sm font-medium text-blue-600 hover:text-blue-800">
                     Chưa có tài khoản?
                 </a>
+                <a href="<?php echo BASE_URL; ?>/auth/forgot" class="text-sm font-medium text-blue-600 hover:text-blue-500">
+                    Quên mật khẩu?
+                </a>
                 <button type="submit"
-                    class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                    class="btn btn-primary">
                     Đăng Nhập
                 </button>
             </div>

@@ -49,8 +49,8 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
 
                     <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 text-right">
                         <button type="submit" name="submit"
-                            class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                            Đăng tải
+                            class="btn btn-primary">
+                            Tải lên
                         </button>
                     </div>
                 </form>
@@ -93,14 +93,14 @@ require_once ROOT_PATH . '/app/Views/layout/header.php';
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><?php echo date('d/m/Y H:i', strtotime($file['uploaded_at'])); ?></td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                                         <a href="<?php echo UPLOAD_URL . $file['file_path']; ?>" target="_blank"
-                                            class="inline-flex items-center justify-center w-16 h-8 px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                                            class="btn-action btn-success">
                                             Tải về
                                         </a>
 
                                         <?php if ($is_admin) : ?>
                                             <form action="<?php echo BASE_URL; ?>/file/destroy/<?php echo $file['id']; ?>" method="POST" class="inline">
                                                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                                                <button type="submit" class="inline-flex justify-center items-center w-16 h-8 px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+                                                <button type="submit" class="btn-action btn-danger"
                                                     onclick="return confirm('Bạn có chắc muốn xóa file [<?php echo htmlspecialchars(addslashes($file['file_name'])); ?>]?');" title="Xóa">
                                                     Xóa
                                                 </button>
