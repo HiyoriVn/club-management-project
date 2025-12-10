@@ -273,4 +273,95 @@ class User
 
         return $this->db->execute();
     }
+    
+    /**
+     * Tìm kiếm người dùng với filter và phân trang
+     * @param string $search Từ khóa tìm kiếm (tên hoặc email)
+     * @param string $role_filter Lọc theo system_role
+     * @param int $page Trang hiện tại
+     * @param int $limit Số bản ghi mỗi trang
+     * @return array ['users' => [], 'total' => int]
+     */
+    public function searchUsers($search = '', $role_filter = '', $page = 1, $limit = 20)
+    {
+        $offset = ($page - 1) * $limit;
+
+        // Build WHERE clause
+        $where = ["1=1"]; // Base condition
+        $bindings = [];
+
+        if (!empty($search)) {
+            $where[] = "(NAME LIKE :search OR email LIKE :search)";
+            $bindings[':search'] = '%' . $search . '%';
+        }
+
+        if (!empty($role_filter)) {
+            $where[] = "system_role = :role";
+            $bindings[':role'] = $role_filter;
+        }
+
+        $where_clause = implode(' AND ', $where);
+
+        // Count total
+        $this->db->query("SELECT COUNT(*) as total FROM users WHERE $where_clause");
+        foreach ($bindings as $key => $value) {
+            $this->db->bind($key, $value);
+        }
+        $total = $this->db->single()['total'];
+
+        // Get users
+        $this->db->query("SELECT id, NAME, email, system_role, created_at 
+                         FROM users 
+                         WHERE $where_clause 
+                         ORDER BY created_at DESC 
+                         LIMIT :limit OFFSET :offset");
+
+        foreach ($bindings as $key => $value) {
+            $this->db->bind($key, $value);
+        }
+        $this->db->bind(':limit', $limit, \PDO::PARAM_INT);
+        $this->db->bind(':offset', $offset, \PDO::PARAM_INT);
+
+        $users = $this->db->resultSet();
+
+        return [
+            'users' => $users,
+            'total' => $total
+        ];
+    }
+
+    /**
+     * Tạo người dùng mới (admin tạo)
+     * @param array $data
+     * @return boolean
+     */
+    public function createUser($data)
+    {
+        $this->db->query("INSERT INTO users (NAME, email, PASSWORD, system_role) 
+                         VALUES (:name, :email, :password, :system_role)");
+
+        $this->db->bind(':name', $data['name']);
+        $this->db->bind(':email', $data['email']);
+        $this->db->bind(':password', $data['password']);
+        $this->db->bind(':system_role', $data['system_role']);
+
+        return $this->db->execute();
+    }
+
+    /**
+     * Cập nhật thông tin cơ bản (name, email)
+     * @param int $user_id
+     * @param array $data
+     * @return boolean
+     */
+    public function updateBasicInfo($user_id, $data)
+    {
+        $this->db->query("UPDATE users SET NAME = :name, email = :email WHERE id = :id");
+
+        $this->db->bind(':id', $user_id);
+        $this->db->bind(':name', $data['name']);
+        $this->db->bind(':email', $data['email']);
+
+        return $this->db->execute();
+    }
 }
