@@ -4,8 +4,8 @@
 namespace App\Controllers;
 
 use App\Core\Controller;
-use App\Models\User; // Cần để lấy Name, Email
-use App\Models\Profile; // Cần để lấy phone, dob...
+use App\Models\User;
+use App\Models\Profile;
 
 class ProfileController extends Controller
 {
@@ -15,19 +15,12 @@ class ProfileController extends Controller
 
     public function __construct()
     {
-        // Chỉ member trở lên mới có Hồ sơ
-        $this->requireRole(['admin', 'subadmin', 'member']);
-
-        // Nạp cả 2 Model
-        require_once ROOT_PATH . '/app/Models/User.php';
-        require_once ROOT_PATH . '/app/Models/Profile.php';
-
         $this->userModel = new User();
         $this->profileModel = new Profile();
     }
 
     /**
-     * (READ) Hiển thị trang "Hồ sơ của tôi" (chính là form Edit)
+     * (READ) Hiển thị trang "Hồ sơ của tôi"
      */
     public function index()
     {

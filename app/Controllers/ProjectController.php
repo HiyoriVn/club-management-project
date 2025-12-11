@@ -17,14 +17,6 @@ class ProjectController extends Controller
 
     public function __construct()
     {
-        // Ít nhất phải là Member mới thấy danh sách Dự án
-        $this->requireRole(['admin', 'subadmin', 'member']);
-
-        // Nạp cả 3 Model
-        require_once ROOT_PATH . '/app/Models/Project.php';
-        require_once ROOT_PATH . '/app/Models/User.php';
-        require_once ROOT_PATH . '/app/Models/Department.php';
-
         $this->projectModel = new Project();
         $this->userModel = new User();
         $this->departmentModel = new Department();

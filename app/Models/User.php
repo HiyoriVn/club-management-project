@@ -133,26 +133,25 @@ class User
      */
     public function assignRole($data)
     {
-        // 'assigned_by' là admin đang thực hiện
         $this->db->query("INSERT INTO user_department_roles (user_id, department_id, role_id, assigned_by) 
                          VALUES (:user_id, :department_id, :role_id, :assigned_by)");
 
         $this->db->bind(':user_id', $data['user_id']);
         $this->db->bind(':department_id', $data['department_id']);
         $this->db->bind(':role_id', $data['role_id']);
-        $this->db->bind(':assigned_by', $_SESSION['user_id']); // Lấy ID của admin đang đăng nhập
+        $this->db->bind(':assigned_by', $_SESSION['user_id']);
 
-        // Dùng try-catch để "bẫy" lỗi Duplicate Key (Mã lỗi 23000)
         try {
             return $this->db->execute();
-        } catch (\PDOException $e) {
-            // Nếu lỗi là do "Duplicate key" (mã 23000)
-            if ($e->getCode() == 23000) {
-                // Chỉ đơn giản là trả về false, không làm "chết" chương trình
+        } catch (\Exception $e) {
+            // Kiểm tra thông báo lỗi để phát hiện trùng lặp (Duplicate)
+            // Vì Database mới ném Exception chung, nên ta check message
+            if (strpos($e->getMessage(), 'Duplicate entry') !== false || $e->getCode() == 23000) {
                 return false;
             } else {
-                // Nếu là lỗi khác, thì mới báo
-                die('Lỗi CSDL khác: ' . $e->getMessage());
+                // Ghi log lỗi thay vì die()
+                error_log("Assign Role Error: " . $e->getMessage());
+                return false;
             }
         }
     }

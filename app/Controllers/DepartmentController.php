@@ -15,10 +15,6 @@ class DepartmentController extends Controller
     public function __construct()
     {
         $this->requireRole(['admin', 'subadmin']);
-
-        require_once ROOT_PATH . '/app/Models/Department.php';
-        require_once ROOT_PATH . '/app/Models/DepartmentRole.php';
-
         $this->departmentModel = new Department();
         $this->roleModel = new DepartmentRole();
     }

@@ -1,3 +1,16 @@
+<?php
+// 1. Tự động lấy thông báo cho user đã đăng nhập
+// (Thay thế cho logic cũ trong Controller)
+$unread_notifications_count = 0;
+$latest_unread_notifications = [];
+
+if (isset($_SESSION['user_id']) && class_exists('App\Models\Notification')) {
+    // Sử dụng Model trực tiếp tại View (View Composition pattern)
+    $notifModel = new \App\Models\Notification();
+    $unread_notifications_count = $notifModel->countUnreadForUser($_SESSION['user_id']);
+    $latest_unread_notifications = $notifModel->getUnreadForUser($_SESSION['user_id'], 5);
+}
+?>
 <!DOCTYPE html>
 <html lang="vi" class="h-full bg-gray-100">
 

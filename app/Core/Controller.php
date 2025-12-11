@@ -1,91 +1,48 @@
 <?php
 // app/Core/Controller.php
-
 namespace App\Core;
 
 class Controller
 {
-
     /**
-     * Tải một Model
-     * (Chúng ta sẽ hoàn thiện hàm này sau)
-     */
-    public function model($model)
-    {
-        // Ví dụ: require_once '../app/Models/' . $model . '.php';
-        // return new $model();
-    }
-
-    /**
-     * Tải một View (Giao diện)
-     * @param string $view Tên file view (ví dụ: 'home')
-     * @param array $data Dữ liệu muốn truyền ra view (ví dụ: ['title' => 'Trang chủ'])
+     * Tải View
+     * @param string $view Tên view (vd: 'home' hoặc 'auth/login')
+     * @param array $data Dữ liệu truyền vào view
      */
     public function view($view, $data = [])
     {
-        // Luôn lấy dữ liệu thông báo nếu đã đăng nhập
-        if (isset($_SESSION['user_id'])) {
-            // Nạp Model (nếu chưa nạp)
-            if (!class_exists('App\Models\Notification')) {
-                require_once ROOT_PATH . '/app/Models/Notification.php';
-            }
-            $notificationModel = new \App\Models\Notification();
-            $data['unread_notifications_count'] = $notificationModel->countUnreadForUser($_SESSION['user_id']);
-            $data['latest_unread_notifications'] = $notificationModel->getUnreadForUser($_SESSION['user_id'], 5);
-        } else {
-            // Nếu chưa đăng nhập, gán giá trị mặc định
-            $data['unread_notifications_count'] = 0;
-            $data['latest_unread_notifications'] = [];
-        }
-        // Biến mảng $data thành các biến riêng lẻ
+        // 1. Logic lấy thông báo (Notifications) đã được tách ra
+        // Chúng ta sẽ gọi nó ở file layout (header.php) thay vì ở đây.
+        // Điều này giúp Controller gọn nhẹ và không phụ thuộc vào Model Notification.
+
+        // 2. Extract data để dùng trong view
         extract($data);
 
-        // Đường dẫn đến file view
-        $viewPath = ROOT_PATH . '/app/Views/' . $view . '.php';
+        // 3. Kiểm tra file view
+        $viewPath = dirname(__DIR__) . '/Views/' . $view . '.php';
 
-        // Kiểm tra file view có tồn tại không
         if (file_exists($viewPath)) {
-            // Nếu tồn tại, nạp file view
             require_once $viewPath;
         } else {
-            // Nếu không, báo lỗi
-            die('View "' . $view . '" không tồn tại.');
+            // Ném lỗi để Developer biết thiếu file view nào
+            throw new \Exception("View '$view' not found at: $viewPath");
         }
     }
-    /* --- CÁC HÀM BẢO VỆ (HELPER) MỚI --- */
 
-    /**
-     * Chốt chặn: Yêu cầu người dùng phải đăng nhập.
-     * Nếu chưa đăng nhập, đẩy về trang login.
-     */
+    // --- CÁC HÀM HELPER  ---
+
     protected function requireLogin()
     {
         if (!isset($_SESSION['user_id'])) {
-            // (Chúng ta sẽ làm thêm Flash Message sau)
-            // echo 'Bạn phải đăng nhập để xem trang này';
             $this->redirect(BASE_URL . '/auth/login');
         }
     }
 
-    /**
-     * Chốt chặn: Yêu cầu người dùng phải là khách (chưa đăng nhập).
-     * Nếu đã đăng nhập, đẩy về trang dashboard.
-     */
     protected function requireGuest()
     {
         if (isset($_SESSION['user_id'])) {
             $this->redirect(BASE_URL . '/dashboard');
         }
-    }
-
-    /**
-     * Hàm chuyển hướng (Helper)
-     * (Chúng ta copy nó từ AuthController ra đây để dùng chung)
-     */
-    protected function redirect($url)
-    {
-        header('Location: ' . $url);
-        exit;
     }
     /**
      * Chốt chặn: Yêu cầu người dùng phải có vai trò (role) cụ thể.
@@ -93,24 +50,30 @@ class Controller
      */
     protected function requireRole($roles = [])
     {
-        // 1. Kiểm tra xem đã đăng nhập chưa
-        if (!isset($_SESSION['user_id'])) {
-            $this->redirect(BASE_URL . '/auth/login');
-        }
+        $this->requireLogin();
 
-        // 2. Kiểm tra xem có vai trò (role) trong session không
         if (!isset($_SESSION['user_role'])) {
-            // (Lỗi hi hữu) Nếu có user_id mà ko có user_role -> bắt đăng xuất
             $this->redirect(BASE_URL . '/auth/logout');
         }
 
-        // 3. Kiểm tra vai trò (role) có nằm trong danh sách được phép
         if (!in_array($_SESSION['user_role'], $roles)) {
-            // Nếu không được phép, báo lỗi 
-            // (Tạm thời đẩy về dashboard, sau này ta làm trang 403 Forbidden)
-            echo "Bạn không có quyền truy cập trang này!";
-            echo '<br><a href="' . BASE_URL . '/dashboard">Quay về Dashboard</a>';
+            // Có thể nâng cấp thành trang 403 Access Denied sau này
+            echo "<div style='padding:20px; text-align:center; color:red;'>
+                    <h1>403 Forbidden</h1>
+                    <p>Bạn không có quyền truy cập trang này.</p>
+                    <a href='" . BASE_URL . "'>Quay về trang chủ</a>
+                  </div>";
             exit;
         }
+    }
+
+    /**
+     * Hàm chuyển hướng
+     * (Chúng ta copy nó từ AuthController ra đây để dùng chung)
+     */
+    protected function redirect($url)
+    {
+        header('Location: ' . $url);
+        exit;
     }
 }

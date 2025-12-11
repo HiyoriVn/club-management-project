@@ -1,70 +1,64 @@
 <?php
-// public/index.php
 
-// 1. Khởi động session
+
+// 1. Cấu hình Session 
+session_set_cookie_params([
+    'lifetime' => 86400,
+    'path' => '/',
+    'domain' => '',
+    'secure' => true, // Đặt true nếu chạy HTTPS
+    'httponly' => true, // Chống XSS đọc cookie
+    'samesite' => 'Lax'
+]);
 session_start();
 
-// Đảm bảo CSRF token luôn tồn tại cho MỌI PHIÊN LÀM VIỆC
+// Đảm bảo CSRF token luôn tồn tại (Logic cũ của bạn, giữ lại)
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// Bật hiển thị lỗi (để debug)
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// 2. Nạp Composer Autoload (Thay thế cho spl_autoload_register thủ công)
+// Dòng này sẽ nạp luôn cả SessionHelper đã khai báo trong composer.json
+require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-// 1. Nạp file cấu hình
-require_once '../config/config.php';
-require_once ROOT_PATH . '/vendor/autoload.php';
-// Nó sẽ đọc file .env ở thư mục gốc (ROOT_PATH)
+// 3. Nạp biến môi trường .env
 try {
-    $dotenv = Dotenv\Dotenv::createImmutable(ROOT_PATH);
+    $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
     $dotenv->load();
-} catch (\Dotenv\Exception\InvalidPathException $e) {
-    // Xử lý nếu file .env không tìm thấy 
-    error_log('Lỗi: Không tìm thấy file .env. ' . $e->getMessage());
-    die('Lỗi cấu hình hệ thống. Vui lòng kiểm tra file .env');
-}
-// 2. Đăng ký Autoloader (Trình tự động nạp lớp)
-// Khi em "new App\Core\Router()", nó sẽ tự động nạp file "app/Core/Router.php"
-spl_autoload_register(function ($className) {
-    $className = str_replace('\\', '/', $className);
-    $classPath = str_replace('App/', '', $className);
-    $file = ROOT_PATH . '/app/' . $classPath . '.php';
-
-    if (file_exists($file)) {
-        require_once $file;
-    }
-});
-
-/**
- * Hàm tiện ích để gửi thông báo
- * @param int $user_id Người nhận
- * @param string $title Tiêu đề
- * @param string $message Nội dung
- */
-function sendNotification($user_id, $title, $message)
-{
-    // Nạp Model
-    if (!class_exists('App\Models\Notification')) {
-        require_once ROOT_PATH . '/app/Models/Notification.php';
-    }
-    // Tạo đối tượng và gửi
-    $notificationModel = new App\Models\Notification();
-    $notificationModel->create($user_id, $title, $message);
+} catch (\Exception $e) {
+    die('Lỗi cấu hình: Không tìm thấy file .env hoặc cấu hình sai.');
 }
 
-// 3. (Tạm thời) Nạp lớp Database thủ công vì nó chưa theo chuẩn App\
-require_once ROOT_PATH . '/app/Core/Database.php';
+// 4. Nạp Config (Sử dụng biến từ .env)
+require_once dirname(__DIR__) . '/config/config.php';
 
-// Nạp file Helper (để dùng hàm set_flash_message và display_flash_message)
-require_once ROOT_PATH . '/app/Helpers/SessionHelper.php';
+// 5. Cấu hình hiển thị lỗi dựa trên môi trường (Thay thế ini_set cứng nhắc)
+if (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'local') {
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', 0); // Tắt hiển thị lỗi trên production
+    error_reporting(0);
+}
 
-// 4. Khởi động ứng dụng
+// 6. Khởi chạy App
+use App\Core\Router;
 
 try {
-    new App\Core\Router();
+    $init = new Router();
 } catch (Exception $e) {
-    echo 'Đã có lỗi xảy ra: ' . $e->getMessage();
+    // Xử lý lỗi toàn cục đẹp mắt hơn
+    if (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'local') {
+        echo "<div style='background:#f8d7da; color:#721c24; padding:20px; border:1px solid #f5c6cb; margin:20px; font-family:sans-serif;'>";
+        echo "<h3>Lỗi Hệ Thống (Local):</h3>";
+        echo "<p><strong>Message:</strong> " . $e->getMessage() . "</p>";
+        echo "<pre>" . $e->getTraceAsString() . "</pre>";
+        echo "</div>";
+    } else {
+        // Ghi log lỗi vào file
+        error_log($e->getMessage());
+        // Hiển thị thông báo thân thiện cho user
+        echo "<h1>Đã xảy ra lỗi hệ thống. Vui lòng quay lại sau.</h1>";
+    }
 }

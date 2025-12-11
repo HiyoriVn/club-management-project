@@ -15,13 +15,6 @@ class FileController extends Controller
 
     public function __construct()
     {
-        // Ít nhất phải là Member mới thấy file
-        $this->requireRole(['admin', 'subadmin', 'member']);
-
-        // Nạp Model
-        require_once ROOT_PATH . '/app/Models/File.php';
-        require_once ROOT_PATH . '/app/Models/Department.php';
-
         $this->fileModel = new File();
         $this->departmentModel = new Department();
     }

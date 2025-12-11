@@ -20,14 +20,7 @@ class ReportController extends Controller
 
     public function __construct()
     {
-        // Chỉ admin/subadmin xem báo cáo
         $this->requireRole(['admin', 'subadmin']);
-
-        require_once ROOT_PATH . '/app/Models/User.php';
-        require_once ROOT_PATH . '/app/Models/Event.php';
-        require_once ROOT_PATH . '/app/Models/Project.php';
-        require_once ROOT_PATH . '/app/Models/Transaction.php';
-        require_once ROOT_PATH . '/app/Models/Department.php';
 
         $this->userModel = new User();
         $this->eventModel = new Event();

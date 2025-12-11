@@ -12,11 +12,7 @@ class TransactionController extends Controller
 
     public function __construct()
     {
-        // Yêu cầu vai trò: Chỉ Admin và Sub-admin mới được quản lý quỹ
         $this->requireRole(['admin', 'subadmin']);
-
-        // Nạp Model
-        require_once ROOT_PATH . '/app/Models/Transaction.php';
         $this->transactionModel = new Transaction();
     }
 

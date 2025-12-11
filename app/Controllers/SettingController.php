@@ -9,7 +9,6 @@ class SettingsController extends Controller
 {
     public function __construct()
     {
-        // Chỉ admin mới được cấu hình hệ thống
         $this->requireRole(['admin']);
     }
 

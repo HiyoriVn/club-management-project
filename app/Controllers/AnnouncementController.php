@@ -1,6 +1,4 @@
 <?php
-// app/Controllers/AnnouncementController.php
-
 namespace App\Controllers;
 
 use App\Core\Controller;
@@ -16,11 +14,6 @@ class AnnouncementController extends Controller
 
     public function __construct()
     {
-        // Nạp các Model cần thiết
-        require_once ROOT_PATH . '/app/Models/Announcement.php';
-        require_once ROOT_PATH . '/app/Models/User.php';
-        require_once ROOT_PATH . '/app/Models/Department.php';
-
         $this->announcementModel = new Announcement();
         $this->userModel = new User();
         $this->departmentModel = new Department();
@@ -96,7 +89,6 @@ class AnnouncementController extends Controller
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
             \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
-            exit;
         }
 
         $departments = $this->departmentModel->findAll();
@@ -201,7 +193,6 @@ class AnnouncementController extends Controller
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
             \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
-            exit;
         }
 
         $departments = $this->departmentModel->findAll();
@@ -271,7 +262,6 @@ class AnnouncementController extends Controller
         if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
             \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
             $this->redirect(BASE_URL);
-            exit;
         }
 
         if (!$this->announcementModel->findById($id)) {

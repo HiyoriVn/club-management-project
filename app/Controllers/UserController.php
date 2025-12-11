@@ -18,13 +18,7 @@ class UserController extends Controller
 
     public function __construct()
     {
-        // Chỉ admin/subadmin được quản lý user
         $this->requireRole(['admin', 'subadmin']);
-
-        require_once ROOT_PATH . '/app/Models/User.php';
-        require_once ROOT_PATH . '/app/Models/Department.php';
-        require_once ROOT_PATH . '/app/Models/DepartmentRole.php';
-        require_once ROOT_PATH . '/app/Models/Profile.php';
 
         $this->userModel = new User();
         $this->departmentModel = new Department();

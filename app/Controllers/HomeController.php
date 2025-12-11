@@ -1,9 +1,6 @@
 <?php
-// app/Controllers/HomeController.php
 
 namespace App\Controllers;
-
-// Nhớ "use" lớp Controller cha
 use App\Core\Controller;
 
 class HomeController extends Controller

@@ -13,9 +13,6 @@ class EventController extends Controller
 
     public function __construct()
     {
-
-        // Nạp model
-        require_once ROOT_PATH . '/app/Models/Event.php';
         $this->eventModel = new Event();
     }
 

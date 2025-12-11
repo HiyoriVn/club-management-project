@@ -13,8 +13,6 @@ class ActivityLogController extends Controller
     public function __construct()
     {
         $this->requireRole(['admin']);
-
-        require_once ROOT_PATH . '/app/Models/ActivityLog.php';
         $this->logModel = new ActivityLog();
     }
 

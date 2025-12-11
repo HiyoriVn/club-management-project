@@ -1,5 +1,4 @@
 <?php
-// app/Helpers/SessionHelper.php
 
 /**
  * Đặt một thông báo flash (sẽ hiển thị ở lần tải trang sau)
@@ -96,4 +95,18 @@ function purify_html($dirty_html)
     $clean_html = $purifier->purify($dirty_html);
 
     return $clean_html;
+}
+/**
+ * Hàm tiện ích để gửi thông báo (Chuyển từ index.php sang)
+ * @param int $user_id Người nhận
+ * @param string $title Tiêu đề
+ * @param string $message Nội dung
+ */
+if (!function_exists('sendNotification')) {
+    function sendNotification($user_id, $title, $message)
+    {
+        // Sử dụng namespace đầy đủ để Autoload tìm thấy
+        $notificationModel = new \App\Models\Notification();
+        $notificationModel->create($user_id, $title, $message);
+    }
 }

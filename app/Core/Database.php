@@ -1,63 +1,48 @@
 <?php
-// app/Core/Database.php
 
-// Sử dụng namespace để tổ chức code
 namespace App\Core;
 
-// Import lớp PDO (có sẵn của PHP)
 use PDO;
 use PDOException;
 
 class Database
 {
-    // 1. Khai báo các thuộc tính của CSDL
     private $host = DB_HOST;
     private $user = DB_USER;
     private $pass = DB_PASS;
     private $name = DB_NAME;
     private $charset = DB_CHARSET;
 
-    // 2. Khai báo các thuộc tính của class
-    private static $instance = null; // Biến static để lưu trữ 1 instance duy nhất
-    private $pdo; // Biến chứa kết nối PDO
-    private $stmt; // Biến chứa câu lệnh (statement)
+    private static $instance = null;
+    private $pdo;
+    private $stmt;
 
-    // 3. Hàm khởi tạo (construct) là private
-    // Ngăn không cho tạo đối tượng bằng "new Database()" từ bên ngoài
     private function __construct()
     {
         $dsn = 'mysql:host=' . $this->host . ';dbname=' . $this->name . ';charset=' . $this->charset;
-
         $options = [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // Bật chế độ báo lỗi
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,     // Trả về dữ liệu dạng mảng associative
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
         ];
 
         try {
-            // Tạo kết nối PDO
             $this->pdo = new PDO($dsn, $this->user, $this->pass, $options);
         } catch (PDOException $e) {
-            // Nếu kết nối thất bại, "chết" và báo lỗi
-            die('Kết nối CSDL thất bại: ' . $e->getMessage());
+            throw new \Exception("Database Connection Error: " . $e->getMessage());
         }
     }
 
     // 4. Phương thức "getInstance" (public, static)
-    // Đây là cách duy nhất để lấy được đối tượng Database
     public static function getInstance()
     {
-        // Nếu $instance chưa được tạo...
         if (self::$instance == null) {
-            // ...thì tạo mới
             self::$instance = new Database();
         }
-        // Trả về instance (mới tạo hoặc đã có từ trước)
         return self::$instance;
     }
 
     // 5. Phương thức "query" (để chuẩn bị câu lệnh SQL)
-    // Ví dụ: $db->query("SELECT * FROM users WHERE id = :id");
     public function query($sql)
     {
         $this->stmt = $this->pdo->prepare($sql);
@@ -112,7 +97,6 @@ class Database
     }
     /**
      * 11. Lấy ID của dòng vừa INSERT
-     * (HÀM MỚI ĐỂ SỬA LỖI FATAL)
      */
     public function lastInsertId()
     {
