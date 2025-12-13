@@ -3,3 +3,5 @@
 
 # Bỏ qua file chứa bí mật
 .env
+# Bỏ qua file composer.phar
+composer.phar

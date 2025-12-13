@@ -29,11 +29,10 @@ class Database
         try {
             $this->pdo = new PDO($dsn, $this->user, $this->pass, $options);
         } catch (PDOException $e) {
-            throw new \Exception("Database Connection Error: " . $e->getMessage());
+            die("Database Connection Error: " . $e->getMessage());
         }
     }
 
-    // 4. Phương thức "getInstance" (public, static)
     public static function getInstance()
     {
         if (self::$instance == null) {
@@ -42,14 +41,11 @@ class Database
         return self::$instance;
     }
 
-    // 5. Phương thức "query" (để chuẩn bị câu lệnh SQL)
     public function query($sql)
     {
         $this->stmt = $this->pdo->prepare($sql);
     }
 
-    // 6. Phương thức "bind" (để gán giá trị an toàn, chống SQL Injection)
-    // Ví dụ: $db->bind(':id', 1);
     public function bind($param, $value, $type = null)
     {
         if (is_null($type)) {
@@ -70,37 +66,47 @@ class Database
         $this->stmt->bindValue($param, $value, $type);
     }
 
-    // 7. Phương thức "execute" (để thực thi câu lệnh)
     public function execute()
     {
         return $this->stmt->execute();
     }
 
-    // 8. Lấy nhiều dòng (SELECT *)
     public function resultSet()
     {
         $this->execute();
         return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 9. Lấy một dòng (SELECT ... LIMIT 1)
     public function single()
     {
         $this->execute();
         return $this->stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // 10. Lấy số dòng bị ảnh hưởng (INSERT, UPDATE, DELETE)
     public function rowCount()
     {
         return $this->stmt->rowCount();
     }
-    /**
-     * 11. Lấy ID của dòng vừa INSERT
-     */
+
     public function lastInsertId()
     {
-        // Gọi hàm lastInsertId() gốc của PDO
         return $this->pdo->lastInsertId();
+    }
+
+    // --- TRANSACTION METHODS ---
+
+    public function beginTransaction()
+    {
+        return $this->pdo->beginTransaction();
+    }
+
+    public function commit()
+    {
+        return $this->pdo->commit();
+    }
+
+    public function rollBack()
+    {
+        return $this->pdo->rollBack();
     }
 }

@@ -1,5 +1,4 @@
 <?php
-// app/Models/ActivityLog.php
 
 namespace App\Models;
 
@@ -15,18 +14,14 @@ class ActivityLog
     }
 
     /**
-     * Ghi một hành động mới vào CSDL
-     * @param int|null $user_id ID của người thực hiện (có thể là NULL nếu là hệ thống)
-     * @param string $action Mã hành động (vd: 'user_login', 'department_created')
-     * @param string $details Chi tiết hành động
-     * @return boolean
+     * Ghi log
      */
-    public function create($user_id, $action, $details)
+    public function create($userId, $action, $details = null)
     {
-        $this->db->query("INSERT INTO activity_logs (user_id, action, details) 
-                         VALUES (:user_id, :action, :details)");
-        
-        $this->db->bind(':user_id', $user_id);
+        $sql = "INSERT INTO activity_logs (user_id, action, details) VALUES (:uid, :action, :details)";
+
+        $this->db->query($sql);
+        $this->db->bind(':uid', $userId); // Có thể NULL nếu là system action
         $this->db->bind(':action', $action);
         $this->db->bind(':details', $details);
 
@@ -34,22 +29,25 @@ class ActivityLog
     }
 
     /**
-     * Lấy tất cả log, JOIN với bảng user để lấy tên
-     * @param int $limit Giới hạn số lượng log (vd: 100 cái mới nhất)
-     * @return array
+     * Lấy log (Phân trang)
      */
-    public function findAllWithUser($limit = 100)
+    public function getLogs($limit = 50, $offset = 0)
     {
-        // Dùng LEFT JOIN phòng khi user_id là NULL (ví dụ: hành động của hệ thống)
-        $this->db->query("SELECT 
-                            al.*, 
-                            u.NAME as user_name 
-                        FROM activity_logs al
-                        LEFT JOIN users u ON al.user_id = u.id
-                        ORDER BY al.created_at DESC
-                        LIMIT :limit");
-        
+        $sql = "SELECT l.*, u.name as user_name 
+                FROM activity_logs l
+                LEFT JOIN users u ON l.user_id = u.id
+                ORDER BY l.created_at DESC
+                LIMIT :limit OFFSET :offset";
+
+        $this->db->query($sql);
         $this->db->bind(':limit', $limit, \PDO::PARAM_INT);
+        $this->db->bind(':offset', $offset, \PDO::PARAM_INT);
+
         return $this->db->resultSet();
     }
+
+    /**
+     * Helper function toàn cục (đã dùng ở AuthController)
+     * Có thể giữ lại function log_activity() trong helpers file, gọi model này
+     */
 }

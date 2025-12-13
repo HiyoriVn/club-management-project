@@ -1,5 +1,4 @@
 <?php
-// app/Models/File.php
 
 namespace App\Models;
 
@@ -15,56 +14,66 @@ class File
     }
 
     /**
-     * Lấy tất cả Files, JOIN với user (uploader) và department
+     * Lấy danh sách file (có thể lọc theo Project hoặc Ban)
      */
-    public function findAll()
+    public function getAll($projectId = null, $departmentId = null)
     {
-        $this->db->query("SELECT 
-                            f.*, 
-                            u.NAME as uploader_name, 
-                            d.NAME as department_name 
-                        FROM files f
-                        JOIN users u ON f.uploaded_by = u.id
-                        LEFT JOIN departments d ON f.department_id = d.id
-                        ORDER BY f.uploaded_at DESC");
+        $sql = "SELECT f.*, u.name as uploader_name 
+                FROM files f
+                LEFT JOIN users u ON f.uploaded_by = u.id
+                WHERE 1=1";
+
+        if ($projectId) {
+            $sql .= " AND f.project_id = :pid";
+        }
+        if ($departmentId) {
+            $sql .= " AND f.department_id = :did";
+        }
+
+        $sql .= " ORDER BY f.uploaded_at DESC";
+
+        $this->db->query($sql);
+        if ($projectId) $this->db->bind(':pid', $projectId);
+        if ($departmentId) $this->db->bind(':did', $departmentId);
+
         return $this->db->resultSet();
     }
 
-    /**
-     * Tìm file bằng ID
-     */
+    public function create($data)
+    {
+        $sql = "INSERT INTO files (file_name, file_path, type, uploaded_by, project_id, department_id) 
+                VALUES (:name, :path, :type, :uid, :pid, :did)";
+
+        $this->db->query($sql);
+
+        $this->db->bind(':name', $data['file_name']);
+        $this->db->bind(':path', $data['file_path']);
+        $this->db->bind(':type', $data['type'] ?? null);
+        $this->db->bind(':uid', $data['uploaded_by']);
+        $this->db->bind(':pid', !empty($data['project_id']) ? $data['project_id'] : null);
+        $this->db->bind(':did', !empty($data['department_id']) ? $data['department_id'] : null);
+
+        return $this->db->execute();
+    }
+
+    public function delete($id)
+    {
+        // Lấy thông tin file để xóa file vật lý ở Controller
+        $file = $this->findById($id);
+        if ($file) {
+            $this->db->query("DELETE FROM files WHERE id = :id");
+            $this->db->bind(':id', $id);
+            if ($this->db->execute()) {
+                return $file; // Trả về thông tin file đã xóa
+            }
+        }
+        return false;
+    }
+
     public function findById($id)
     {
         $this->db->query("SELECT * FROM files WHERE id = :id");
         $this->db->bind(':id', $id);
         return $this->db->single();
-    }
-
-    /**
-     * Lưu thông tin file vào CSDL
-     * @param array $data (file_name, file_path, department_id)
-     * @return boolean
-     */
-    public function create($data)
-    {
-        $this->db->query("INSERT INTO files (file_name, file_path, uploaded_by, department_id) 
-                         VALUES (:file_name, :file_path, :uploaded_by, :department_id)");
-
-        $this->db->bind(':file_name', $data['file_name']);
-        $this->db->bind(':file_path', $data['file_path']); // Đường dẫn lưu trên server
-        $this->db->bind(':uploaded_by', $_SESSION['user_id']);
-        $this->db->bind(':department_id', empty($data['department_id']) ? null : $data['department_id']);
-
-        return $this->db->execute();
-    }
-
-    /**
-     * Xóa file khỏi CSDL (Việc xóa file vật lý sẽ làm ở Controller)
-     */
-    public function delete($id)
-    {
-        $this->db->query("DELETE FROM files WHERE id = :id");
-        $this->db->bind(':id', $id);
-        return $this->db->execute();
     }
 }

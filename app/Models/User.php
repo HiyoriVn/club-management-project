@@ -1,10 +1,10 @@
 <?php
-// app/Models/User.php
 
 namespace App\Models;
 
-// "use" Lớp Database lõi của chúng ta
+use PDO;
 use App\Core\Database;
+use Exception;
 
 class User
 {
@@ -12,204 +12,183 @@ class User
 
     public function __construct()
     {
-        // Lấy đối tượng Database (Singleton)
         $this->db = Database::getInstance();
     }
 
     /**
-     * Tìm người dùng bằng email
-     * @param string $email
-     * @return mixed (object/boolean) Trả về object user nếu tìm thấy, false nếu không
+     * Tạo User mới (Kèm Profile mặc định)
+     * Sử dụng Transaction để đảm bảo toàn vẹn dữ liệu
      */
-    public function findUserByEmail($email)
+    public function create($data)
     {
-        $this->db->query("SELECT * FROM users WHERE email = :email");
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Insert vào bảng users
+            $this->db->query("INSERT INTO users (name, email, password, system_role, is_active) 
+                              VALUES (:name, :email, :password, :system_role, 1)");
+
+            $this->db->bind(':name', $data['name']);
+            $this->db->bind(':email', $data['email']);
+            // Password cần được hash trước khi truyền vào đây hoặc hash tại đây
+            $passwordHash = password_hash($data['password'], PASSWORD_DEFAULT);
+            $this->db->bind(':password', $passwordHash);
+            $this->db->bind(':system_role', $data['system_role'] ?? 'member');
+
+            if (!$this->db->execute()) {
+                throw new Exception("Không thể tạo tài khoản user.");
+            }
+
+            $userId = $this->db->lastInsertId();
+
+            // 2. Insert vào bảng user_profiles (Thông tin cơ bản)
+            $this->db->query("INSERT INTO user_profiles (user_id, phone, gender, dob, address, bio) 
+                              VALUES (:user_id, :phone, :gender, :dob, :address, :bio)");
+
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':phone', $data['phone'] ?? null);
+            $this->db->bind(':gender', $data['gender'] ?? 'other');
+            $this->db->bind(':dob', $data['dob'] ?? null);
+            $this->db->bind(':address', $data['address'] ?? null);
+            $this->db->bind(':bio', $data['bio'] ?? null);
+
+            if (!$this->db->execute()) {
+                throw new Exception("Không thể tạo hồ sơ user.");
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("User Create Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Lấy thông tin chi tiết User (Join users + user_profiles)
+     */
+    public function getProfile($id)
+    {
+        $sql = "SELECT u.id, u.name, u.email, u.system_role, u.is_active, u.created_at,
+                       p.phone, p.gender, p.dob, p.address, p.bio, p.avatar
+                FROM users u
+                LEFT JOIN user_profiles p ON u.id = p.user_id
+                WHERE u.id = :id AND u.is_active = 1"; // Chỉ lấy user còn active
+
+        $this->db->query($sql);
+        $this->db->bind(':id', $id);
+
+        return $this->db->single();
+    }
+
+    /**
+     * Cập nhật thông tin User (Profile + Basic Info)
+     */
+    public function update($id, $data)
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Update bảng users (nếu có thay đổi name/email/role)
+            // Chỉ update các trường có trong $data
+            if (isset($data['name']) || isset($data['email']) || isset($data['system_role'])) {
+                $sql = "UPDATE users SET ";
+                $updates = [];
+                if (isset($data['name'])) $updates[] = "name = :name";
+                if (isset($data['email'])) $updates[] = "email = :email";
+                if (isset($data['system_role'])) $updates[] = "system_role = :role";
+
+                $sql .= implode(", ", $updates) . " WHERE id = :id";
+
+                $this->db->query($sql);
+                $this->db->bind(':id', $id);
+                if (isset($data['name'])) $this->db->bind(':name', $data['name']);
+                if (isset($data['email'])) $this->db->bind(':email', $data['email']);
+                if (isset($data['system_role'])) $this->db->bind(':role', $data['system_role']);
+
+                $this->db->execute();
+            }
+
+            // 2. Update bảng user_profiles
+            // Kiểm tra xem profile đã tồn tại chưa (đề phòng data cũ thiếu)
+            $this->db->query("SELECT user_id FROM user_profiles WHERE user_id = :id");
+            $this->db->bind(':id', $id);
+
+            if ($this->db->rowCount() == 0) {
+                // Nếu chưa có profile -> Insert
+                $this->db->query("INSERT INTO user_profiles (user_id, phone, gender, dob, address, bio) 
+                                  VALUES (:id, :phone, :gender, :dob, :address, :bio)");
+            } else {
+                // Nếu có rồi -> Update
+                $this->db->query("UPDATE user_profiles SET 
+                                  phone = :phone, gender = :gender, dob = :dob, 
+                                  address = :address, bio = :bio 
+                                  WHERE user_id = :id");
+            }
+
+            $this->db->bind(':id', $id);
+            $this->db->bind(':phone', $data['phone'] ?? null);
+            $this->db->bind(':gender', $data['gender'] ?? 'other');
+            $this->db->bind(':dob', !empty($data['dob']) ? $data['dob'] : null);
+            $this->db->bind(':address', $data['address'] ?? null);
+            $this->db->bind(':bio', $data['bio'] ?? null);
+
+            $this->db->execute();
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            error_log("User Update Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Soft Delete (Xóa mềm)
+     * Set is_active = 0 thay vì xóa khỏi DB
+     */
+    public function delete($id)
+    {
+        $this->db->query("UPDATE users SET is_active = 0 WHERE id = :id");
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+
+    /**
+     * Tìm User để đăng nhập
+     * Chỉ tìm user đang Active
+     */
+    public function login($email, $password)
+    {
+        $this->db->query("SELECT * FROM users WHERE email = :email AND is_active = 1");
         $this->db->bind(':email', $email);
 
         $row = $this->db->single();
 
-        // Kiểm tra xem có tìm thấy user không
-        if ($this->db->rowCount() > 0) {
-            return $row; // Trả về thông tin user (dạng mảng)
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Đăng ký người dùng mới
-     * @param array $data (chứa name, email, password)
-     * @return boolean True nếu thành công, False nếu thất bại
-     */
-    public function register($data)
-    {
-        // Chuẩn bị câu lệnh SQL
-        $this->db->query("INSERT INTO users (name, email, password, system_role) VALUES (:name, :email, :password, 'guest')");
-
-        // Bind các giá trị
-        $this->db->bind(':name', $data['name']);
-        $this->db->bind(':email', $data['email']);
-        $this->db->bind(':password', $data['password']); // Mật khẩu đã được mã hóa từ Controller
-
-        // Thực thi
-        if ($this->db->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Đăng nhập người dùng
-     * @param string $email
-     * @param string $password (mật khẩu người dùng gõ)
-     * @return mixed Trả về mảng thông tin user nếu thành công, false nếu thất bại
-     */
-    public function login($email, $password)
-    {
-        // 1. Tìm user bằng email
-        $row = $this->findUserByEmail($email);
-
-        // Nếu không tìm thấy email
-        if ($row == false) {
-            return false;
-        }
-
-        // 2. Lấy mật khẩu đã mã hóa (hashed) từ CSDL
-        $hashed_password = $row['PASSWORD'];
-
-        // 3. So sánh mật khẩu người dùng gõ với mật khẩu đã mã hóa
-        // Dùng hàm password_verify() có sẵn của PHP
-        if (password_verify($password, $hashed_password)) {
-            // Mật khẩu khớp -> Trả về thông tin user
-            return $row;
-        } else {
-            // Mật khẩu không khớp
-            return false;
-        }
-    }
-    /**
-     * Lấy 1 user bằng ID
-     */
-    public function findById($id)
-    {
-        $this->db->query("SELECT * FROM users WHERE id = :id");
-        $this->db->bind(':id', $id);
-        $row = $this->db->single();
-        return ($this->db->rowCount() > 0) ? $row : false;
-    }
-
-    /**
-     * Lấy tất cả user trong hệ thống
-     */
-    public function getAllUsers()
-    {
-        // Lấy các cột cần thiết, dùng NAME viết hoa
-        $this->db->query("SELECT id, NAME, email, system_role FROM users ORDER BY NAME");
-        return $this->db->resultSet();
-    }
-
-    /**
-     * Lấy các vai trò (trong các Ban) của 1 user cụ thể
-     */
-    public function getRolesForUser($user_id)
-    {
-        // Dùng JOIN để lấy tên Ban và tên Vai trò
-        // Dùng NAME viết hoa cho các bảng
-        $this->db->query("SELECT 
-                            udr.id as assignment_id, 
-                            d.NAME as department_name, 
-                            dr.NAME as role_name
-                        FROM user_department_roles udr
-                        JOIN departments d ON udr.department_id = d.id
-                        JOIN department_roles dr ON udr.role_id = dr.id
-                        WHERE udr.user_id = :user_id");
-        $this->db->bind(':user_id', $user_id);
-        return $this->db->resultSet();
-    }
-
-    /**
-     * Gán 1 vai trò mới cho user
-     */
-    public function assignRole($data)
-    {
-        $this->db->query("INSERT INTO user_department_roles (user_id, department_id, role_id, assigned_by) 
-                         VALUES (:user_id, :department_id, :role_id, :assigned_by)");
-
-        $this->db->bind(':user_id', $data['user_id']);
-        $this->db->bind(':department_id', $data['department_id']);
-        $this->db->bind(':role_id', $data['role_id']);
-        $this->db->bind(':assigned_by', $_SESSION['user_id']);
-
-        try {
-            return $this->db->execute();
-        } catch (\Exception $e) {
-            // Kiểm tra thông báo lỗi để phát hiện trùng lặp (Duplicate)
-            // Vì Database mới ném Exception chung, nên ta check message
-            if (strpos($e->getMessage(), 'Duplicate entry') !== false || $e->getCode() == 23000) {
-                return false;
-            } else {
-                // Ghi log lỗi thay vì die()
-                error_log("Assign Role Error: " . $e->getMessage());
-                return false;
+        if ($row) {
+            if (password_verify($password, $row['password'])) {
+                return $row;
             }
         }
+        return false;
     }
 
     /**
-     * Thu hồi 1 vai trò (xóa 1 dòng trong user_department_roles)
+     * Thay đổi mật khẩu
      */
-    public function revokeRole($assignment_id)
+    public function changePassword($id, $newPassword)
     {
-        $this->db->query("DELETE FROM user_department_roles WHERE id = :assignment_id");
-        $this->db->bind(':assignment_id', $assignment_id);
+        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+        $this->db->query("UPDATE users SET password = :password WHERE id = :id");
+        $this->db->bind(':password', $hashed);
+        $this->db->bind(':id', $id);
         return $this->db->execute();
     }
 
     /**
-     * Lấy danh sách ID các Ban mà user là thành viên
-     * @param int $user_id
-     * @return array Mảng các ID, vd: [1, 3]
-     */
-    public function getDepartmentIds($user_id)
-    {
-        $this->db->query("SELECT DISTINCT department_id FROM user_department_roles WHERE user_id = :user_id");
-        $this->db->bind(':user_id', $user_id);
-
-        // 1. Lấy kết quả bằng hàm public
-        // Kết quả sẽ là: [ ['department_id' => 1], ['department_id' => 3] ]
-        $resultSet = $this->db->resultSet();
-
-        // 2. Dùng array_column() để trích xuất thành mảng [ 1, 3 ]
-        $results = array_column($resultSet, 'department_id');
-
-        return $results ? $results : [];
-    }
-
-    /**
-     * Cập nhật system_role cho 1 user (Promote/Demote)
-     * @param int $user_id ID của user cần đổi
-     * @param string $new_role Vai trò mới (vd: 'member', 'guest')
-     * @return boolean
-     */
-    public function setSystemRole($user_id, $new_role)
-    {
-        // Kiểm tra xem $new_role có hợp lệ không (an toàn)
-        $allowed_roles = ['guest', 'member', 'subadmin', 'admin'];
-        if (!in_array($new_role, $allowed_roles)) {
-            return false;
-        }
-
-        $this->db->query("UPDATE users SET system_role = :new_role WHERE id = :user_id");
-        $this->db->bind(':new_role', $new_role);
-        $this->db->bind(':user_id', $user_id);
-
-        return $this->db->execute();
-    }
-
-    /**
-     * HÀM MỚI 1: Tìm user bằng email
-     * (AuthController cần hàm này để kiểm tra email có tồn tại không)
+     * Tìm theo Email (Dùng cho check unique, forgot password...)
      */
     public function findByEmail($email)
     {
@@ -219,148 +198,87 @@ class User
     }
 
     /**
-     * HÀM MỚI 2: Cập nhật token reset mật khẩu
-     * (Lưu token và thời gian hết hạn vào CSDL)
-     */
-    public function updateResetToken($userId, $token, $expires)
-    {
-        $sql = "UPDATE users SET 
-                password_reset_token = :token, 
-                password_reset_expires = :expires 
-                WHERE id = :id";
-
-        $this->db->query($sql);
-        $this->db->bind(':token', $token);
-        $this->db->bind(':expires', $expires);
-        $this->db->bind(':id', $userId);
-
-        return $this->db->execute();
-    }
-
-    /**
-     * HÀM MỚI 3: Tìm user bằng token (và token CÒN HẠN)
-     * (AuthController dùng hàm này để xác minh link trong email)
+     * Tìm theo Reset Token (Password Reset)
      */
     public function findByResetToken($token)
     {
-        // Câu lệnh SQL này RẤT QUAN TRỌNG:
-        // Nó chỉ tìm token VÀ token đó còn hạn (chưa quá NOW())
-        $sql = "SELECT * FROM users 
-                WHERE password_reset_token = :token 
-                AND password_reset_expires > NOW()";
-
-        $this->db->query($sql);
+        $this->db->query("SELECT * FROM users 
+                          WHERE password_reset_token = :token 
+                          AND password_reset_expires > NOW()
+                          AND is_active = 1");
         $this->db->bind(':token', $token);
         return $this->db->single();
     }
 
     /**
-     * HÀM MỚI 4: Cập nhật mật khẩu VÀ xóa token
-     * (Sau khi user đặt mật khẩu mới thành công, ta xóa token đi)
+     * Cập nhật Reset Token
      */
-    public function updatePassword($userId, $newPassword)
+    public function updateResetToken($id, $token, $expires)
     {
-        $sql = "UPDATE users SET 
-                password = :password, 
-                password_reset_token = NULL, 
-                password_reset_expires = NULL 
-                WHERE id = :id";
-
-        $this->db->query($sql);
-        $this->db->bind(':password', $newPassword);
-        $this->db->bind(':id', $userId);
-
+        $this->db->query("UPDATE users SET password_reset_token = :token, password_reset_expires = :expires WHERE id = :id");
+        $this->db->bind(':token', $token);
+        $this->db->bind(':expires', $expires);
+        $this->db->bind(':id', $id);
         return $this->db->execute();
     }
-    
+
     /**
-     * Tìm kiếm người dùng với filter và phân trang
-     * @param string $search Từ khóa tìm kiếm (tên hoặc email)
-     * @param string $role_filter Lọc theo system_role
-     * @param int $page Trang hiện tại
-     * @param int $limit Số bản ghi mỗi trang
-     * @return array ['users' => [], 'total' => int]
+     * Reset Password (và xóa token)
      */
-    public function searchUsers($search = '', $role_filter = '', $page = 1, $limit = 20)
+    public function resetPassword($id, $password)
+    {
+        $hashed = password_hash($password, PASSWORD_DEFAULT);
+        $this->db->query("UPDATE users SET password = :password, password_reset_token = NULL, password_reset_expires = NULL WHERE id = :id");
+        $this->db->bind(':password', $hashed);
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+
+    /**
+     * Lấy danh sách user (Có phân trang & Tìm kiếm)
+     */
+    public function getAllUsers($search = '', $role = '', $page = 1, $limit = 10)
     {
         $offset = ($page - 1) * $limit;
-
-        // Build WHERE clause
-        $where = ["1=1"]; // Base condition
-        $bindings = [];
+        $where = ["is_active = 1"]; // Chỉ lấy user active
 
         if (!empty($search)) {
-            $where[] = "(NAME LIKE :search OR email LIKE :search)";
-            $bindings[':search'] = '%' . $search . '%';
+            $where[] = "(name LIKE :search OR email LIKE :search)";
         }
-
-        if (!empty($role_filter)) {
+        if (!empty($role)) {
             $where[] = "system_role = :role";
-            $bindings[':role'] = $role_filter;
         }
 
-        $where_clause = implode(' AND ', $where);
+        $whereSql = implode(" AND ", $where);
 
         // Count total
-        $this->db->query("SELECT COUNT(*) as total FROM users WHERE $where_clause");
-        foreach ($bindings as $key => $value) {
-            $this->db->bind($key, $value);
-        }
-        $total = $this->db->single()['total'];
+        $sqlCount = "SELECT COUNT(*) as total FROM users WHERE $whereSql";
+        $this->db->query($sqlCount);
+        if (!empty($search)) $this->db->bind(':search', "%$search%");
+        if (!empty($role)) $this->db->bind(':role', $role);
 
-        // Get users
-        $this->db->query("SELECT id, NAME, email, system_role, created_at 
-                         FROM users 
-                         WHERE $where_clause 
-                         ORDER BY created_at DESC 
-                         LIMIT :limit OFFSET :offset");
+        $totalRow = $this->db->single();
+        $total = $totalRow['total'];
 
-        foreach ($bindings as $key => $value) {
-            $this->db->bind($key, $value);
-        }
-        $this->db->bind(':limit', $limit, \PDO::PARAM_INT);
-        $this->db->bind(':offset', $offset, \PDO::PARAM_INT);
+        // Get Data
+        $sqlData = "SELECT id, name, email, system_role, created_at 
+                    FROM users 
+                    WHERE $whereSql 
+                    ORDER BY created_at DESC 
+                    LIMIT :limit OFFSET :offset";
 
-        $users = $this->db->resultSet();
+        $this->db->query($sqlData);
+        if (!empty($search)) $this->db->bind(':search', "%$search%");
+        if (!empty($role)) $this->db->bind(':role', $role);
+        $this->db->bind(':limit', $limit, PDO::PARAM_INT);
+        $this->db->bind(':offset', $offset, PDO::PARAM_INT);
 
         return [
-            'users' => $users,
-            'total' => $total
+            'users' => $this->db->resultSet(),
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'total_pages' => ceil($total / $limit)
         ];
-    }
-
-    /**
-     * Tạo người dùng mới (admin tạo)
-     * @param array $data
-     * @return boolean
-     */
-    public function createUser($data)
-    {
-        $this->db->query("INSERT INTO users (NAME, email, PASSWORD, system_role) 
-                         VALUES (:name, :email, :password, :system_role)");
-
-        $this->db->bind(':name', $data['name']);
-        $this->db->bind(':email', $data['email']);
-        $this->db->bind(':password', $data['password']);
-        $this->db->bind(':system_role', $data['system_role']);
-
-        return $this->db->execute();
-    }
-
-    /**
-     * Cập nhật thông tin cơ bản (name, email)
-     * @param int $user_id
-     * @param array $data
-     * @return boolean
-     */
-    public function updateBasicInfo($user_id, $data)
-    {
-        $this->db->query("UPDATE users SET NAME = :name, email = :email WHERE id = :id");
-
-        $this->db->bind(':id', $user_id);
-        $this->db->bind(':name', $data['name']);
-        $this->db->bind(':email', $data['email']);
-
-        return $this->db->execute();
     }
 }

@@ -1,5 +1,4 @@
 <?php
-// app/Models/Department.php
 
 namespace App\Models;
 
@@ -15,103 +14,82 @@ class Department
     }
 
     /**
-     * Lấy tất cả các Ban (Departments)
+     * Lấy tất cả phòng ban
      */
-    public function findAll()
+    public function getAll()
     {
-        // (Tạm thời ta lấy đơn giản, sau này sẽ join để lấy tên ban cha)
-        $this->db->query("SELECT * FROM departments ORDER BY created_at DESC");
+        $this->db->query("SELECT * FROM departments ORDER BY name ASC");
         return $this->db->resultSet();
     }
 
     /**
-     * Tìm Ban bằng Tên (phân biệt hoa thường)
-     * @param string $name
-     * @return mixed Trả về mảng data nếu tìm thấy, false nếu không
-     */
-    public function findByName($name)
-    {
-        // Dùng BINARY để tìm kiếm chính xác (phân biệt hoa/thường)
-        $this->db->query("SELECT * FROM departments WHERE BINARY NAME = :name");
-        $this->db->bind(':name', $name);
-
-        $row = $this->db->single();
-
-        return ($this->db->rowCount() > 0) ? $row : false;
-    }
-
-    /**
-     * Thêm một Ban mới vào CSDL
-     * @param array $data (chứa name, description, parent_id)
-     * @return boolean True nếu thành công, False nếu thất bại
-     */
-    public function create($data)
-    {
-        // Chuẩn bị câu lệnh SQL
-        // Chú ý: Dùng đúng tên cột trong CSDL (NAME viết hoa)
-        $this->db->query("INSERT INTO departments (NAME, description, parent_id) 
-                         VALUES (:name, :description, :parent_id)");
-
-        // Bind các giá trị
-        $this->db->bind(':name', $data['name']);
-        $this->db->bind(':description', $data['description']);
-
-        // Xử lý parent_id (nếu người dùng không chọn, nó phải là NULL)
-        $this->db->bind(':parent_id', empty($data['parent_id']) ? null : $data['parent_id']);
-
-        // Thực thi
-        return $this->db->execute();
-    }
-    /**
-     * Tìm một Ban bằng ID
-     * @param int $id
-     * @return mixed Trả về mảng data nếu tìm thấy, false nếu không
+     * Lấy thông tin 1 phòng ban theo ID
      */
     public function findById($id)
     {
         $this->db->query("SELECT * FROM departments WHERE id = :id");
         $this->db->bind(':id', $id);
-
-        $row = $this->db->single();
-
-        return ($this->db->rowCount() > 0) ? $row : false;
+        return $this->db->single();
     }
 
     /**
-     * Cập nhật thông tin Ban
-     * @param int $id ID của Ban cần sửa
-     * @param array $data Dữ liệu mới (name, description, parent_id)
-     * @return boolean True nếu thành công, False nếu thất bại
+     * Tạo phòng ban mới
+     */
+    public function create($data)
+    {
+        $this->db->query("INSERT INTO departments (name, description) VALUES (:name, :description)");
+        $this->db->bind(':name', $data['name']);
+        $this->db->bind(':description', $data['description'] ?? null);
+
+        if ($this->db->execute()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Cập nhật phòng ban
      */
     public function update($id, $data)
     {
-        // Chú ý: Dùng đúng tên cột trong CSDL (NAME viết hoa)
-        $this->db->query("UPDATE departments SET 
-                            NAME = :name, 
-                            description = :description, 
-                            parent_id = :parent_id 
-                         WHERE id = :id");
-
-        // Bind các giá trị
+        $this->db->query("UPDATE departments SET name = :name, description = :description WHERE id = :id");
         $this->db->bind(':id', $id);
         $this->db->bind(':name', $data['name']);
-        $this->db->bind(':description', $data['description']);
-        $this->db->bind(':parent_id', empty($data['parent_id']) ? null : $data['parent_id']);
+        $this->db->bind(':description', $data['description'] ?? null);
 
-        // Thực thi
-        return $this->db->execute();
+        if ($this->db->execute()) {
+            return true;
+        } else {
+            return false;
+        }
     }
+
     /**
-     * Xóa một Ban khỏi CSDL
-     * @param int $id ID của Ban cần xóa
-     * @return boolean True nếu thành công, False nếu thất bại
+     * Xóa phòng ban
      */
     public function delete($id)
     {
         $this->db->query("DELETE FROM departments WHERE id = :id");
         $this->db->bind(':id', $id);
 
-        // Thực thi
-        return $this->db->execute();
+        if ($this->db->execute()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Đếm số lượng thành viên trong mỗi ban (Dùng cho Dashboard/List)
+     */
+    public function getMemberCounts()
+    {
+        $sql = "SELECT d.id, d.name, COUNT(m.id) as member_count 
+                FROM departments d 
+                LEFT JOIN memberships m ON d.id = m.department_id 
+                GROUP BY d.id, d.name";
+        $this->db->query($sql);
+        return $this->db->resultSet();
     }
 }

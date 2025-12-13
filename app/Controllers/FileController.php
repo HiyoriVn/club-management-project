@@ -1,157 +1,106 @@
 <?php
-// app/Controllers/FileController.php
 
 namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\File;
-use App\Models\Department; // Cần cho dropdown Ban
+use App\Models\ActivityLog;
 
 class FileController extends Controller
 {
-
     private $fileModel;
-    private $departmentModel;
+    private $logModel;
 
     public function __construct()
     {
+        $this->requireLogin();
         $this->fileModel = new File();
-        $this->departmentModel = new Department();
+        $this->logModel = new ActivityLog();
     }
 
-    /**
-     * (READ) Hiển thị trang danh sách Files
-     */
     public function index()
     {
-        $files = $this->fileModel->findAll();
-        $departments = $this->departmentModel->findAll(); // Lấy list Ban cho form upload
+        // Filter theo project hoặc department
+        $projectId = $_GET['project_id'] ?? null;
+        $deptId = $_GET['department_id'] ?? null;
 
-        $data = [
-            'title' => 'Quản lý Tài liệu',
+        $files = $this->fileModel->getAll($projectId, $deptId);
+
+        $this->view('files/index', [
             'files' => $files,
-            'all_departments' => $departments, // Cho form upload
-            'upload_err' => '' // Lưu lỗi upload (nếu có)
-        ];
-
-        $this->view('files/index', $data);
+            'title' => 'Tài liệu & Tập tin'
+        ]);
     }
 
-    /**
-     * (CREATE) Xử lý Upload file (POST)
-     */
     public function upload()
     {
-        // Chỉ admin/subadmin mới được upload
-        $this->requireRole(['admin', 'subadmin']);
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            if (isset($_FILES['file_upload']) && $_FILES['file_upload']['error'] == 0) {
 
-        if ($_SERVER['REQUEST_METHOD'] != 'POST' || !isset($_FILES['fileToUpload'])) {
-            $this->redirect(BASE_URL . '/file');
-        }
+                $file = $_FILES['file_upload'];
+                $fileName = $file['name'];
+                $fileTmp = $file['tmp_name'];
+                $fileType = $file['type'];
 
-        // Kiểm tra CSRF Token
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
-            $this->redirect(BASE_URL);
-            exit;
-        }
+                // Validate Extension
+                $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                $allowed = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'zip', 'rar'];
 
-        $target_dir = UPLOAD_PATH; // Lấy từ config.php
-        $department_id = $_POST['department_id'];
-        $uploadedFile = $_FILES['fileToUpload'];
+                if (!in_array($ext, $allowed)) {
+                    \set_flash_message('error', 'Loại file không được phép.');
+                    $this->redirect($_SERVER['HTTP_REFERER']);
+                }
 
-        // Lấy tên file gốc
-        $original_filename = basename($uploadedFile["name"]);
-        // Tạo tên file duy nhất (để tránh trùng lặp) bằng cách thêm timestamp
-        $timestamp = time();
-        $unique_filename = $timestamp . "_" . $original_filename;
-        $target_file = $target_dir . $unique_filename;
+                // Generate unique name
+                $newName = uniqid() . '_' . $fileName;
+                $destPath = UPLOAD_PATH . $newName;
 
-        $uploadOk = 1;
-        $fileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+                // Move file
+                if (move_uploaded_file($fileTmp, $destPath)) {
+                    $data = [
+                        'file_name' => $fileName,
+                        'file_path' => $newName, // Lưu tên file thôi, đường dẫn full config ở View
+                        'type' => $fileType,
+                        'uploaded_by' => $_SESSION['user_id'],
+                        'project_id' => !empty($_POST['project_id']) ? $_POST['project_id'] : null,
+                        'department_id' => !empty($_POST['department_id']) ? $_POST['department_id'] : null
+                    ];
 
-        // --- Các bước kiểm tra file (Có thể thêm nhiều kiểm tra hơn) ---
+                    $this->fileModel->create($data);
+                    $this->logModel->create($_SESSION['user_id'], 'file_upload', "Upload file: $fileName");
 
-        // Kiểm tra file có thực sự được upload
-        if ($uploadedFile["error"] !== UPLOAD_ERR_OK) {
-            \set_flash_message('error', "Lỗi khi upload file. Mã lỗi: " . $uploadedFile["error"]);
-            $uploadOk = 0;
-        }
-
-        // Kiểm tra loại file (Whitelist)
-        $allowed_types = ['jpg', 'jpeg', 'png', 'pdf', 'docx', 'pptx', 'xlsx', 'txt', 'zip', 'rar'];
-        if (!in_array($fileType, $allowed_types)) {
-            \set_flash_message('error', "File quá lớn (Tối đa 50MB).");
-            $uploadOk = 0;
-        }
-
-        // Kiểm tra kích thước file (ví dụ: giới hạn 50MB)
-        elseif ($uploadedFile["size"] > 50 * 1024 * 1024) {
-            $_SESSION['upload_error'] = "File quá lớn (Tối đa 50MB).";
-            $uploadOk = 0;
-        }
-
-        // --- Xử lý upload ---
-        if ($uploadOk == 1) {
-            // Di chuyển file từ thư mục tạm vào thư mục uploads
-            if (move_uploaded_file($uploadedFile["tmp_name"], $target_file)) {
-                // Upload thành công, lưu vào CSDL
-                $data = [
-                    'file_name' => $original_filename, // Lưu tên gốc
-                    'file_path' => $unique_filename,   // Lưu tên duy nhất trên server
-                    'department_id' => $department_id
-                ];
-                if ($this->fileModel->create($data)) {
-                    \log_activity('file_uploaded', 'Đã tải lên file: [' . $original_filename . '] (Lưu_trữ_với_tên: ' . $unique_filename . ').');
-                    \set_flash_message('success', 'Upload file [' . htmlspecialchars($original_filename) . '] thành công!');
+                    \set_flash_message('success', 'Upload thành công.');
                 } else {
-                    \set_flash_message('error', "Lưu thông tin file vào CSDL thất bại.");
-                    unlink($target_file);
+                    \set_flash_message('error', 'Lỗi khi lưu file.');
                 }
             } else {
-                \set_flash_message('error', "Có lỗi khi di chuyển file đã upload.");
+                \set_flash_message('error', 'Vui lòng chọn file hợp lệ.');
             }
+            $this->redirect($_SERVER['HTTP_REFERER'] ?? BASE_URL . '/file');
         }
-
-        // Quay lại trang danh sách (nếu có lỗi, nó sẽ hiển thị)
-        $this->redirect(BASE_URL . '/file');
     }
 
-    /**
-     * (DELETE) Xử lý Xóa file (POST)
-     */
-    public function destroy($id)
+    public function delete($id)
     {
-        $this->requireRole(['admin', 'subadmin']);
-
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/file');
-        }
-
-        // Kiểm tra CSRF Token
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
-            $this->redirect(BASE_URL);
-            exit;
-        }
-
-        // 1. Lấy thông tin file từ CSDL
         $file = $this->fileModel->findById($id);
-        if (!$file) {
-            \set_flash_message('error', 'Không tìm thấy file để xóa.');
-            $this->redirect(BASE_URL . '/file');
+
+        // Check quyền: Chỉ người up hoặc Admin được xóa
+        if ($file && ($_SESSION['user_role'] == 'admin' || $file['uploaded_by'] == $_SESSION['user_id'])) {
+
+            // Xóa trong DB
+            if ($this->fileModel->delete($id)) {
+                // Xóa file vật lý
+                $filePath = UPLOAD_PATH . $file['file_path'];
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
+
+                \set_flash_message('success', 'Đã xóa file.');
+            }
+        } else {
+            \set_flash_message('error', 'Không có quyền xóa.');
         }
 
-        // 2. Xóa file vật lý trên server
-        $file_path_on_server = UPLOAD_PATH . $file['file_path'];
-        if (file_exists($file_path_on_server)) {
-            unlink($file_path_on_server); // Hàm xóa file của PHP
-        }
-
-        // 3. Xóa thông tin file trong CSDL
-        $this->fileModel->delete($id);
-        \log_activity('file_deleted', 'Đã xóa file: [' . $file['file_name'] . '] (ID: ' . $id . ').');
-        \set_flash_message('success', 'Đã xóa file [' . htmlspecialchars($file['file_name']) . '] thành công!');
-        $this->redirect(BASE_URL . '/file');
+        $this->redirect($_SERVER['HTTP_REFERER'] ?? BASE_URL . '/file');
     }
 }

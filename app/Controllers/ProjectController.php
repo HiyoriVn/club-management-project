@@ -1,5 +1,4 @@
 <?php
-// app/Controllers/ProjectController.php
 
 namespace App\Controllers;
 
@@ -7,520 +6,240 @@ use App\Core\Controller;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\Department;
+use App\Models\ActivityLog;
 
 class ProjectController extends Controller
 {
-
     private $projectModel;
     private $userModel;
-    private $departmentModel;
+    private $deptModel;
+    private $logModel;
 
     public function __construct()
     {
+        $this->requireLogin();
+
         $this->projectModel = new Project();
         $this->userModel = new User();
-        $this->departmentModel = new Department();
+        $this->deptModel = new Department(); // Để chọn ban phụ trách nếu cần
+        $this->logModel = new ActivityLog();
     }
 
     /**
-     * (READ) Hiển thị trang danh sách tất cả Dự án
+     * Danh sách dự án / sự kiện
      */
     public function index()
     {
-        $projects = $this->projectModel->findAll();
+        // Filter type: 'project' (default) hoặc 'event' hoặc 'all'
+        $type = $_GET['type'] ?? 'project';
+        $status = $_GET['status'] ?? null;
+
+        if ($type === 'event') {
+            $dataList = $this->projectModel->getAllEvents(50, $status);
+            $title = 'Danh sách Sự kiện';
+        } elseif ($type === 'project') {
+            $dataList = $this->projectModel->getAllProjects(50, $status);
+            $title = 'Danh sách Dự án';
+        } else {
+            // Nếu muốn lấy cả 2, cần custom method trong Model hoặc merge
+            // Tạm thời default về project nếu param sai
+            $dataList = $this->projectModel->getAllProjects(50, $status);
+            $title = 'Danh sách Dự án';
+        }
+
         $data = [
-            'title' => 'Quản lý Dự án',
-            'projects' => $projects
+            'projects' => $dataList,
+            'current_type' => $type,
+            'current_status' => $status,
+            'title' => $title
         ];
+
         $this->view('projects/index', $data);
     }
 
     /**
-     * (CREATE) Hiển thị form tạo Dự án (GET)
+     * Chi tiết dự án/sự kiện
      */
-    public function create()
+    public function detail($id)
     {
-        // Chỉ admin/subadmin mới được tạo
-        $this->requireRole(['admin', 'subadmin']);
-
-        $data = [
-            'title' => 'Tạo Dự án mới',
-            // Dữ liệu cho Form
-            'name' => '',
-            'description' => '',
-            'start_date' => '',
-            'end_date' => '',
-            'leader_id' => null,
-            'department_id' => null,
-            'status' => 'planning', // Mặc định
-            'name_err' => '',
-
-            // Dữ liệu cho Dropdowns
-            'all_users' => $this->userModel->getAllUsers(), // Lấy list user
-            'all_departments' => $this->departmentModel->findAll() // Lấy list Ban
-        ];
-
-        $this->view('projects/create', $data);
-    }
-
-    /**
-     * (CREATE) Xử lý lưu Dự án (POST)
-     */
-    public function store()
-    {
-        $this->requireRole(['admin', 'subadmin']);
-
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+        $project = $this->projectModel->findById($id);
+        if (!$project) {
+            \set_flash_message('error', 'Dữ liệu không tồn tại.');
             $this->redirect(BASE_URL . '/project');
         }
 
-        // Kiểm tra CSRF Token
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
-            $this->redirect(BASE_URL);
-            exit;
-        }
+        $members = $this->projectModel->getMembers($id);
 
         $data = [
-            'title' => 'Tạo Dự án mới',
-            'name' => trim($_POST['name']),
-            'description' => trim($_POST['description']),
-            'start_date' => $_POST['start_date'],
-            'end_date' => $_POST['end_date'],
-            'leader_id' => $_POST['leader_id'],
-            'department_id' => $_POST['department_id'],
-            'status' => $_POST['status'],
-            'name_err' => '',
-
-            'all_users' => $this->userModel->getAllUsers(),
-            'all_departments' => $this->departmentModel->findAll()
+            'project' => $project,
+            'members' => $members,
+            'title' => $project['name']
         ];
 
-        // Validate
-        if (empty($data['name'])) {
-            $data['name_err'] = 'Vui lòng nhập Tên Dự án';
-        }
+        // Load view 'projects/view.php'
+        $this->view('projects/view', $data);
+    }
 
-        if (empty($data['name_err'])) {
-            if ($this->projectModel->create($data)) {
-                \set_flash_message('success', 'Tạo dự án [' . htmlspecialchars($data['name']) . '] thành công!');
-                \log_activity('project_created', 'Đã tạo dự án mới: [' . $data['name'] . '].');
-                $this->redirect(BASE_URL . '/project');
+    /**
+     * Tạo mới
+     */
+    public function create()
+    {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $data = [
+                'name' => trim($_POST['name']),
+                'description' => $_POST['description'],
+                'type' => $_POST['type'] ?? 'project', // Quan trọng
+                'status' => $_POST['status'] ?? 'planning',
+                'start_date' => $_POST['start_date'],
+                'end_date' => $_POST['end_date'],
+                'leader_id' => $_POST['leader_id'] ?? null,
+                'department_id' => $_POST['department_id'] ?? null
+            ];
+
+            if (empty($data['name'])) {
+                \set_flash_message('error', 'Tên không được để trống.');
+                $this->redirect(BASE_URL . '/project/create?type=' . $data['type']);
+            }
+
+            $id = $this->projectModel->create($data);
+            if ($id) {
+                // Tự động add người tạo làm thành viên (hoặc Leader)
+                $this->projectModel->addMember($id, $_SESSION['user_id'], 'Member');
+
+                $this->logModel->create($_SESSION['user_id'], 'project_create', "Tạo " . $data['type'] . ": " . $data['name']);
+                \set_flash_message('success', 'Tạo thành công.');
+                $this->redirect(BASE_URL . '/project/index?type=' . $data['type']);
             } else {
-                \set_flash_message('error', 'Có lỗi CSDL, không thể tạo dự án.');
+                \set_flash_message('error', 'Lỗi hệ thống.');
                 $this->redirect(BASE_URL . '/project/create');
             }
         } else {
-            // Lỗi, tải lại view create
+            // Chuẩn bị data cho form
+            $users = $this->userModel->getAllUsers(); // Cho dropdown chọn Leader
+            $depts = $this->deptModel->getAll();      // Cho dropdown chọn Ban
+            $type = $_GET['type'] ?? 'project';
+
+            $data = [
+                'users' => $users['users'] ?? [], // getAllUsers trả về array có key 'users'
+                'departments' => $depts,
+                'type' => $type,
+                'title' => 'Tạo ' . ($type == 'event' ? 'Sự kiện' : 'Dự án') . ' mới'
+            ];
+
             $this->view('projects/create', $data);
         }
     }
 
     /**
-     * (UPDATE) Hiển thị form Sửa Dự án (GET)
+     * Chỉnh sửa
      */
     public function edit($id)
     {
-        $this->requireRole(['admin', 'subadmin']);
-
         $project = $this->projectModel->findById($id);
         if (!$project) {
             $this->redirect(BASE_URL . '/project');
         }
 
-        $data = [
-            'title' => 'Chỉnh sửa Dự án',
-            'id' => $id,
-            'name' => $project['NAME'], // Dùng NAME (viết hoa) từ CSDL
-            'description' => $project['description'],
-            'start_date' => $project['start_date'],
-            'end_date' => $project['end_date'],
-            'leader_id' => $project['leader_id'],
-            'department_id' => $project['department_id'],
-            'status' => $project['STATUS'],
-            'name_err' => '',
+        // Check quyền: Chỉ Admin hoặc Leader mới được sửa (Logic mở rộng sau)
+        // Hiện tại cho phép login user sửa
 
-            'all_users' => $this->userModel->getAllUsers(),
-            'all_departments' => $this->departmentModel->findAll()
-        ];
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $data = [
+                'name' => trim($_POST['name']),
+                'description' => $_POST['description'],
+                'status' => $_POST['status'],
+                'start_date' => $_POST['start_date'],
+                'end_date' => $_POST['end_date'],
+                'leader_id' => $_POST['leader_id'],
+                'department_id' => $_POST['department_id']
+            ];
 
-        $this->view('projects/edit', $data);
-    }
-
-    /**
-     * (UPDATE) Xử lý cập nhật Dự án (POST)
-     */
-    public function update($id)
-    {
-        $this->requireRole(['admin', 'subadmin']);
-
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/project');
-        }
-
-        // Kiểm tra CSRF Token
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
-            $this->redirect(BASE_URL);
-            exit;
-        }
-
-        $data = [
-            'title' => 'Chỉnh sửa Dự án',
-            'id' => $id,
-            'name' => trim($_POST['name']),
-            'description' => trim($_POST['description']),
-            'start_date' => $_POST['start_date'],
-            'end_date' => $_POST['end_date'],
-            'leader_id' => $_POST['leader_id'],
-            'department_id' => $_POST['department_id'],
-            'status' => $_POST['status'],
-            'name_err' => '',
-
-            'all_users' => $this->userModel->getAllUsers(),
-            'all_departments' => $this->departmentModel->findAll()
-        ];
-
-        // Validate
-        if (empty($data['name'])) {
-            $data['name_err'] = 'Vui lòng nhập Tên Dự án';
-        }
-
-        if (empty($data['name_err'])) {
             if ($this->projectModel->update($id, $data)) {
-                \log_activity('project_updated', 'Đã cập nhật dự án: [' . $data['name'] . '] (ID: ' . $id . ').');
-                \set_flash_message('success', 'Cập nhật dự án [' . htmlspecialchars($data['name']) . '] thành công!');
-                $this->redirect(BASE_URL . '/project');
+                $this->logModel->create($_SESSION['user_id'], 'project_update', "Cập nhật ID: $id");
+                \set_flash_message('success', 'Cập nhật thành công.');
+                $this->redirect(BASE_URL . '/project/view/' . $id);
             } else {
-                \set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật.');
+                \set_flash_message('error', 'Lỗi cập nhật.');
                 $this->redirect(BASE_URL . '/project/edit/' . $id);
             }
         } else {
+            $users = $this->userModel->getAllUsers();
+            $depts = $this->deptModel->getAll();
+
+            $data = [
+                'project' => $project,
+                'users' => $users['users'] ?? [],
+                'departments' => $depts,
+                'title' => 'Chỉnh sửa: ' . $project['name']
+            ];
             $this->view('projects/edit', $data);
         }
     }
 
     /**
-     * (DELETE) Xử lý Xóa Dự án (POST)
+     * Quản lý thành viên (Thêm/Xóa)
      */
-    public function destroy($id)
+    public function members($id)
     {
-        $this->requireRole(['admin', 'subadmin']);
+        $project = $this->projectModel->findById($id);
+        if (!$project) $this->redirect(BASE_URL . '/project');
 
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/project');
-        }
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            // Action: add hoặc remove
+            $action = $_POST['action'] ?? '';
+            $userId = $_POST['user_id'] ?? 0;
+            $role = $_POST['role'] ?? 'Member';
 
-        // Kiểm tra CSRF Token
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
-            $this->redirect(BASE_URL);
-            exit;
-        }
-
-        $project = $this->projectModel->findById($id); // Lấy tên
-        if (!$project) {
-            \set_flash_message('error', 'Không tìm thấy dự án.');
-            $this->redirect(BASE_URL . '/project');
-        }
-
-        if ($this->projectModel->delete($id)) {
-            \log_activity('project_deleted', 'Đã xóa dự án: [' . $project['NAME'] . '] (ID: ' . $id . ').');
-            \set_flash_message('success', 'Đã xóa dự án [' . htmlspecialchars($project['NAME']) . '] thành công!');
-            $this->redirect(BASE_URL . '/project');
-        } else {
-            \set_flash_message('error', 'Có lỗi CSDL khi xóa.');
-            $this->redirect(BASE_URL . '/project');
-        }
-    }
-
-    /**
-     * (READ) Hiển thị trang Quản lý Thành viên cho 1 Dự án (GET)
-     */
-    public function manage($project_id)
-    {
-        // Chỉ admin/subadmin mới được quản lý
-        $this->requireRole(['admin', 'subadmin']);
-
-        // 1. Lấy thông tin dự án
-        $project = $this->projectModel->findById($project_id);
-        if (!$project) {
-            $this->redirect(BASE_URL . '/project');
-        }
-
-        // 2. Lấy danh sách (chỉ 'member' trở lên) để thêm vào
-        $all_available_users = $this->userModel->getAllUsers(); // (Tạm thời lấy hết, sau này có thể lọc)
-
-        $data = [
-            'title' => 'Quản lý thành viên: ' . $project['NAME'],
-            'project' => $project,
-            // Lấy các thành viên dự án này đang có
-            'current_members' => $this->projectModel->getMembers($project_id),
-            // Lấy tất cả user để làm dropdown
-            'all_users' => $all_available_users
-        ];
-
-        $this->view('projects/manage', $data);
-    }
-
-    /**
-     * (CREATE) Xử lý thêm thành viên vào dự án (POST)
-     */
-    public function addMember($project_id)
-    {
-        $this->requireRole(['admin', 'subadmin']);
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/project');
-        }
-
-        // Kiểm tra CSRF Token
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
-            $this->redirect(BASE_URL);
-            exit;
-        }
-
-        $user_id = $_POST['user_id'];
-        $role = $_POST['role'];
-
-        // Validate đơn giản
-        if (empty($user_id) || empty($role)) {
-            \set_flash_message('error', 'Vui lòng chọn thành viên và vai trò.');
-            $this->redirect(BASE_URL . '/project/manage/' . $project_id);
-        }
-
-        if ($this->projectModel->addMember($project_id, $user_id, $role)) {
-            \log_activity('project_member_added', 'Đã thêm UserID: ' . $user_id . ' vào ProjectID: ' . $project_id . ' với vai trò [' . $role . '].');
-            \set_flash_message('success', 'Thêm thành viên vào dự án thành công!');
-        } else {
-            \set_flash_message('error', 'Thêm thất bại. Thành viên này có thể đã ở trong dự án.');
-        }
-
-        $this->redirect(BASE_URL . '/project/manage/' . $project_id);
-    }
-
-    /**
-     * (DELETE) Xử lý xóa thành viên khỏi dự án (POST)
-     */
-    public function removeMember($project_id, $assignment_id)
-    {
-        $this->requireRole(['admin', 'subadmin']);
-
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/project');
-        }
-
-        // Kiểm tra CSRF Token
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
-            $this->redirect(BASE_URL);
-            exit;
-        }
-
-        $this->projectModel->removeMember($assignment_id);
-        \log_activity('project_member_removed', 'Đã xóa thành viên (AssignmentID: ' . $assignment_id . ') khỏi ProjectID: ' . $project_id . '.');
-        \set_flash_message('success', 'Xóa thành viên khỏi dự án thành công!');
-        $this->redirect(BASE_URL . '/project/manage/' . $project_id);
-    }
-
-    /**
-     * (READ) Hiển thị trang Quản lý Tasks (Kanban) cho 1 Dự án (GET)
-     * ĐÃ SỬA: Logic linh hoạt, có cột "Quá hạn"
-     */
-    public function tasks($project_id)
-    {
-        // 1. Chỉ admin/subadmin mới được quản lý
-        $this->requireRole(['admin', 'subadmin']);
-
-        // 2. Lấy thông tin dự án
-        $project = $this->projectModel->findById($project_id);
-        if (!$project) {
-            $this->redirect(BASE_URL . '/project');
-        }
-
-        // 3. ĐỊNH NGHĨA QUY TRÌNH (WORKFLOW) LINH HOẠT
-        // Đây là "trái tim" của sự linh hoạt
-        $statuses = [
-            'backlog'     => '📋 Backlog',
-            'todo'        => '📝 Cần làm',
-            'in_progress' => '⏳ Đang làm',
-            'overdue'     => '🔥 Quá hạn', 
-            'done'        => '✅ Hoàn thành'
-        ];
-
-        // 4. Khởi tạo mảng $tasks_by_status
-        $tasks_by_status = [];
-        foreach ($statuses as $key => $name) {
-            $tasks_by_status[$key] = []; // Khởi tạo rỗng
-        }
-
-        // 5. Lấy và PHÂN LOẠI tasks
-        $all_tasks = $this->projectModel->getTasks($project_id);
-        $today = date('Y-m-d'); // Lấy ngày hôm nay
-
-        foreach ($all_tasks as $task) {
-            // Logic MỚI: Nếu task "Quá hạn" VÀ "Chưa xong"...
-            // (Phải kiểm tra $task['due_date'] có tồn tại không)
-            if ($task['due_date'] && $task['due_date'] < $today && $task['STATUS'] != 'done') {
-                $tasks_by_status['overdue'][] = $task;
-
-                // Nếu không quá hạn, cho vào cột bình thường của nó
-                // (Kiểm tra xem status có tồn tại trong mảng $tasks_by_status không)
-            } elseif (isset($tasks_by_status[$task['STATUS']])) {
-                $tasks_by_status[$task['STATUS']][] = $task;
-            }
-        }
-
-        // 6. Gửi dữ liệu ra View
-        $data = [
-            'title' => 'Tasks: ' . $project['NAME'],
-            'project' => $project,
-            'tasks_by_status' => $tasks_by_status, // Dữ liệu đã phân loại
-            'all_members' => $this->projectModel->getMembers($project_id), // Dùng cho dropdown "Gán cho"
-
-            'statuses' => $statuses // Gửi cả cấu hình cột ra View
-        ];
-
-        $this->view('projects/tasks', $data);
-    }
-
-    /**
-     * (CREATE) Xử lý tạo Task mới (POST) (Đã nâng cấp)
-     */
-    public function storeTask($project_id)
-    {
-        $this->requireRole(['admin', 'subadmin']);
-
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/project');
-        }
-
-        // Kiểm tra CSRF Token
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
-            $this->redirect(BASE_URL);
-            exit;
-        }
-
-        // 1. Thu thập dữ liệu từ Form
-        $data = [
-            'project_id' => $project_id,
-            'title' => trim($_POST['title']),
-            'description' => trim($_POST['description']), // Trix Editor gửi HTML
-            'start_date' => $_POST['start_date'],
-            'due_date' => $_POST['due_date'],
-
-            // Lấy các trường nâng cấp (sẽ thêm vào form ở bước sau)
-            'color' => $_POST['color'] ?? '#007bff', // Lấy màu, nếu không có thì mặc định
-            'attachment_link' => trim($_POST['attachment_link'] ?? ''), // Lấy link
-
-            'status' => 'backlog' // Mặc định khi tạo mới là 'backlog'
-        ];
-
-        // 2. Validate (Đơn giản)
-        if (empty($data['title'])) {
-            \set_flash_message('error', 'Tiêu đề Task là bắt buộc.');
-            $this->redirect(BASE_URL . '/project/tasks/' . $project_id);
-        }
-
-        // 3. Tạo Task chính
-        $new_task_id = $this->projectModel->createTask($data);
-
-        if ($new_task_id) {
-            // 4. Xử lý gán NHIỀU người (assignees)
-            if (!empty($_POST['assigned_to']) && is_array($_POST['assigned_to'])) {
-                foreach ($_POST['assigned_to'] as $user_id) {
-                    $this->projectModel->assignTaskToUser($new_task_id, $user_id);
+            if ($action == 'add') {
+                if ($this->projectModel->addMember($id, $userId, $role)) {
+                    \set_flash_message('success', 'Đã thêm thành viên.');
+                } else {
+                    \set_flash_message('error', 'Thành viên đã tồn tại hoặc lỗi.');
                 }
+            } elseif ($action == 'remove') {
+                $this->projectModel->removeMember($id, $userId);
+                \set_flash_message('success', 'Đã xóa thành viên.');
             }
 
-            \log_activity('project_task_created', 'Đã tạo task mới: [' . $data['title'] . '] cho ProjectID: ' . $project_id . '.');
-            \set_flash_message('success', 'Tạo task [' . htmlspecialchars($data['title']) . '] thành công!');
+            $this->redirect(BASE_URL . '/project/members/' . $id);
         } else {
-            \set_flash_message('error', 'Lỗi CSDL: Không thể tạo task.');
-        }
+            $currentMembers = $this->projectModel->getMembers($id);
+            $allUsers = $this->userModel->getAllUsers();
 
-        $this->redirect(BASE_URL . '/project/tasks/' . $project_id);
+            // Lọc ra những user chưa tham gia để hiển thị trong dropdown thêm mới
+            $memberIds = array_column($currentMembers, 'user_id');
+            $availableUsers = array_filter($allUsers['users'], function ($u) use ($memberIds) {
+                return !in_array($u['id'], $memberIds);
+            });
+
+            $data = [
+                'project' => $project,
+                'members' => $currentMembers,
+                'available_users' => $availableUsers,
+                'title' => 'Thành viên: ' . $project['name']
+            ];
+            $this->view('projects/members', $data);
+        }
     }
 
     /**
-     * (UPDATE) Xử lý di chuyển Task (đổi status) (POST)
-     * ĐÃ SỬA: Trả về JSON cho AJAX thay vì Redirect
+     * Xóa dự án (Admin only)
      */
-    public function moveTask($project_id, $task_id)
+    public function delete($id)
     {
-        // 1. Chỉ Admin/Subadmin
-        $this->requireRole(['admin', 'subadmin']);
-
-        // 2. Mặc định phản hồi là lỗi
-        $response = ['success' => false, 'message' => 'Yêu cầu không hợp lệ'];
-        header('Content-Type: application/json'); // Luôn trả về JSON
-
-        // 3. Kiểm tra Method
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $response['message'] = 'Chỉ chấp nhận POST';
-            echo json_encode($response);
-            exit;
-        }
-
-        // 4. Kiểm tra CSRF Token
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            $response['message'] = 'Lỗi CSRF Token. Vui lòng tải lại trang.';
-            echo json_encode($response);
-            exit;
-        }
-
-        // 5. Xử lý Logic
-        $new_status = $_POST['new_status'];
-        // Chỉ cho phép cập nhật các status CÓ THẬT trong CSDL
-        $allowed_statuses = ['backlog', 'todo', 'in_progress', 'done'];
-
-        if (empty($new_status) || !in_array($new_status, $allowed_statuses)) {
-            $response['message'] = 'Trạng thái mới không hợp lệ.';
-            echo json_encode($response);
-            exit;
-        }
-
-        // Cột "overdue" (Quá hạn) là cột logic, không phải status trong CSDL
-        // Khi user kéo 1 task, chúng ta chỉ cần cập nhật status thật của nó
-        // (vd: todo, in_progress, done).
-        // Lần tải trang sau, Controller (hàm tasks()) sẽ tự quyết định
-        // task đó có nên hiển thị ở cột "overdue" hay không.
-
-        if ($this->projectModel->updateTaskStatus($task_id, $new_status)) {
-            \log_activity('project_task_moved', 'Đã chuyển TaskID: ' . $task_id . ' (ProjectID: ' . $project_id . ') sang trạng thái [' . $new_status . '].');
-            $response['success'] = true;
-            $response['message'] = 'Cập nhật task thành công';
-        } else {
-            $response['message'] = 'Lỗi CSDL khi cập nhật task.';
-        }
-
-        // 6. Trả về JSON
-        echo json_encode($response);
-        exit;
-    }
-
-    /**
-     * (DELETE) Xử lý xóa Task (POST)
-     */
-    public function deleteTask($project_id, $task_id)
-    {
-        $this->requireRole(['admin', 'subadmin']);
-
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+        if ($_SESSION['user_role'] !== 'admin') {
+            \set_flash_message('error', 'Bạn không có quyền xóa dự án.');
             $this->redirect(BASE_URL . '/project');
         }
 
-        // Kiểm tra CSRF Token
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ hoặc phiên làm việc đã hết hạn.');
-            $this->redirect(BASE_URL);
-            exit;
+        $project = $this->projectModel->findById($id);
+        if ($project && $this->projectModel->delete($id)) {
+            $this->logModel->create($_SESSION['user_id'], 'project_delete', "Xóa project ID: $id");
+            \set_flash_message('success', 'Đã xóa dự án.');
+        } else {
+            \set_flash_message('error', 'Xóa thất bại.');
         }
-
-        $this->projectModel->deleteTask($task_id);
-        \log_activity('project_task_deleted', 'Đã xóa TaskID: ' . $task_id . ' (ProjectID: ' . $project_id . ').');
-        \set_flash_message('success', 'Đã xóa task.');
-        $this->redirect(BASE_URL . '/project/tasks/' . $project_id);
+        $this->redirect(BASE_URL . '/project');
     }
 }

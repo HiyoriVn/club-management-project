@@ -1,436 +1,281 @@
 <?php
-// app/Controllers/UserController.php
 
 namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\User;
-use App\Models\Department;
-use App\Models\DepartmentRole;
-use App\Models\Profile;
+use App\Models\Membership; // Để lấy thông tin ban chuyên môn nếu cần
+use App\Models\ActivityLog;
 
 class UserController extends Controller
 {
     private $userModel;
-    private $departmentModel;
-    private $roleModel;
-    private $profileModel;
+    private $logModel;
 
     public function __construct()
     {
-        $this->requireRole(['admin', 'subadmin']);
+        // Yêu cầu đăng nhập cho toàn bộ Controller này
+        $this->requireLogin();
 
         $this->userModel = new User();
-        $this->departmentModel = new Department();
-        $this->roleModel = new DepartmentRole();
-        $this->profileModel = new Profile();
+        $this->logModel = new ActivityLog();
     }
 
     /**
-     * Danh sách người dùng (có tìm kiếm và phân trang)
+     * Danh sách người dùng (Chỉ dành cho Admin/Subadmin)
      */
     public function index()
     {
-        // Lấy tham số tìm kiếm
+        // Kiểm tra quyền
+        if ($_SESSION['user_role'] === 'member' || $_SESSION['user_role'] === 'guest') {
+            \set_flash_message('error', 'Bạn không có quyền truy cập trang này.');
+            $this->redirect(BASE_URL);
+        }
+
+        // Lấy tham số filter từ URL
         $search = $_GET['search'] ?? '';
-        $role_filter = $_GET['role'] ?? '';
-        $page = $_GET['page'] ?? 1;
-        $limit = 20;
+        $role = $_GET['role'] ?? '';
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $limit = 10;
 
-        // Gọi model với filter
-        $result = $this->userModel->searchUsers($search, $role_filter, $page, $limit);
+        // Gọi Model lấy dữ liệu phân trang
+        $data = $this->userModel->getAllUsers($search, $role, $page, $limit);
 
-        $data = [
-            'title' => 'Quản lý Người dùng',
-            'users' => $result['users'],
-            'total' => $result['total'],
-            'page' => $page,
-            'limit' => $limit,
-            'search' => $search,
-            'role_filter' => $role_filter
-        ];
+        // Truyền lại các tham số filter để view hiển thị
+        $data['search'] = $search;
+        $data['role_filter'] = $role;
+        $data['title'] = 'Quản lý thành viên';
 
         $this->view('users/index', $data);
     }
 
     /**
-     * Xem chi tiết người dùng
+     * Xem hồ sơ cá nhân (hoặc của người khác)
      */
-    public function viewUser($user_id)
+    public function profile($id = null)
     {
-        $user = $this->userModel->findById($user_id);
-        if (!$user) {
-            \set_flash_message('error', 'Không tìm thấy người dùng.');
-            $this->redirect(BASE_URL . '/user');
-            return;
+        // Nếu không truyền ID -> Xem hồ sơ của chính mình
+        if ($id === null) {
+            $id = $_SESSION['user_id'];
         }
 
-        $profile = $this->profileModel->findByUserId($user_id);
-        $roles = $this->userModel->getRolesForUser($user_id);
+        $user = $this->userModel->getProfile($id);
+
+        if (!$user) {
+            \set_flash_message('error', 'Người dùng không tồn tại.');
+            $this->redirect(BASE_URL);
+        }
 
         $data = [
-            'title' => 'Chi tiết: ' . $user['NAME'],
             'user' => $user,
-            'profile' => $profile,
-            'roles' => $roles
+            'is_own_profile' => ($id == $_SESSION['user_id']),
+            'title' => 'Hồ sơ: ' . htmlspecialchars($user['name'])
         ];
 
-        $this->view('users/view', $data);
+        $this->view('users/profile', $data);
     }
 
     /**
-     * Form tạo người dùng mới
+     * Cập nhật hồ sơ cá nhân
+     */
+    public function update_profile()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect(BASE_URL . '/user/profile');
+        }
+
+        $id = $_SESSION['user_id'];
+
+        // Lấy dữ liệu từ form
+        $updateData = [
+            'name' => trim($_POST['name']),
+            'phone' => trim($_POST['phone']),
+            'gender' => $_POST['gender'],
+            'dob' => $_POST['dob'],
+            'address' => trim($_POST['address']),
+            'bio' => trim($_POST['bio'])
+            // Không cho phép user tự đổi email/role ở đây
+        ];
+
+        // Validate cơ bản
+        if (empty($updateData['name'])) {
+            \set_flash_message('error', 'Họ tên không được để trống.');
+            $this->redirect(BASE_URL . '/user/profile');
+            return;
+        }
+
+        // Gọi Model update
+        if ($this->userModel->update($id, $updateData)) {
+            // Cập nhật lại session name nếu đổi tên
+            $_SESSION['user_name'] = $updateData['name'];
+
+            $this->logModel->create($id, 'profile_update', 'Cập nhật hồ sơ cá nhân.');
+            \set_flash_message('success', 'Cập nhật hồ sơ thành công.');
+        } else {
+            \set_flash_message('error', 'Có lỗi xảy ra khi cập nhật.');
+        }
+
+        $this->redirect(BASE_URL . '/user/profile');
+    }
+
+    /**
+     * Form tạo người dùng mới (Admin only)
      */
     public function create()
     {
-        // Chỉ admin mới được tạo user
-        $this->requireRole(['admin']);
+        if ($_SESSION['user_role'] !== 'admin') {
+            $this->redirect(BASE_URL);
+        }
 
         $data = [
-            'title' => 'Tạo Người dùng mới',
+            'title' => 'Thêm thành viên mới',
             'name' => '',
             'email' => '',
             'password' => '',
-            'system_role' => 'member',
-            'name_err' => '',
+            'role' => 'member',
             'email_err' => '',
-            'password_err' => ''
+            'password_err' => '',
+            'name_err' => ''
         ];
 
         $this->view('users/create', $data);
     }
 
     /**
-     * Lưu người dùng mới
+     * Xử lý tạo người dùng
      */
     public function store()
     {
-        $this->requireRole(['admin']);
-
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/user');
+        if ($_SESSION['user_role'] !== 'admin') {
+            $this->redirect(BASE_URL);
         }
 
-        // CSRF Check
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ.');
-            $this->redirect(BASE_URL . '/user');
-            exit;
-        }
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            // Lấy dữ liệu
+            $data = [
+                'name' => trim($_POST['name']),
+                'email' => trim($_POST['email']),
+                'password' => trim($_POST['password']),
+                'system_role' => $_POST['system_role'] ?? 'member',
+                // Thông tin profile mặc định
+                'phone' => trim($_POST['phone'] ?? ''),
+                'gender' => $_POST['gender'] ?? 'other',
+            ];
 
-        $data = [
-            'title' => 'Tạo Người dùng mới',
-            'name' => trim($_POST['name']),
-            'email' => trim($_POST['email']),
-            'password' => trim($_POST['password']),
-            'system_role' => $_POST['system_role'] ?? 'member',
-            'name_err' => '',
-            'email_err' => '',
-            'password_err' => ''
-        ];
+            // Validate
+            $errors = [];
+            if (empty($data['name'])) $errors['name_err'] = 'Vui lòng nhập tên';
+            if (empty($data['email'])) $errors['email_err'] = 'Vui lòng nhập email';
+            if (empty($data['password'])) $errors['password_err'] = 'Vui lòng nhập mật khẩu';
+            if (strlen($data['password']) < 6) $errors['password_err'] = 'Mật khẩu phải từ 6 ký tự';
 
-        // Validate
-        if (empty($data['name'])) {
-            $data['name_err'] = 'Vui lòng nhập tên';
-        }
+            // Check email tồn tại
+            if ($this->userModel->findByEmail($data['email'])) {
+                $errors['email_err'] = 'Email này đã được sử dụng';
+            }
 
-        if (empty($data['email'])) {
-            $data['email_err'] = 'Vui lòng nhập email';
-        } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            $data['email_err'] = 'Email không hợp lệ';
-        } elseif ($this->userModel->findUserByEmail($data['email'])) {
-            $data['email_err'] = 'Email này đã được sử dụng';
-        }
-
-        if (empty($data['password'])) {
-            $data['password_err'] = 'Vui lòng nhập mật khẩu';
-        } elseif (strlen($data['password']) < 6) {
-            $data['password_err'] = 'Mật khẩu phải có ít nhất 6 ký tự';
-        }
-
-        // Xử lý
-        if (empty($data['name_err']) && empty($data['email_err']) && empty($data['password_err'])) {
-            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-
-            if ($this->userModel->createUser($data)) {
-                \log_activity('user_created', 'Admin đã tạo tài khoản mới: [' . $data['name'] . '] - Email: ' . $data['email']);
-                \set_flash_message('success', 'Tạo người dùng [' . htmlspecialchars($data['name']) . '] thành công!');
-                $this->redirect(BASE_URL . '/user');
+            if (empty($errors)) {
+                // Tạo user (Model tự xử lý transaction User + Profile)
+                if ($this->userModel->create($data)) {
+                    $this->logModel->create($_SESSION['user_id'], 'user_create', "Tạo thành viên: " . $data['email']);
+                    \set_flash_message('success', 'Tạo thành viên thành công!');
+                    $this->redirect(BASE_URL . '/user/index');
+                } else {
+                    \set_flash_message('error', 'Lỗi hệ thống khi tạo user.');
+                }
             } else {
-                \set_flash_message('error', 'Có lỗi xảy ra, không thể tạo người dùng.');
+                $data = array_merge($data, $errors);
+                $data['title'] = 'Thêm thành viên mới';
                 $this->view('users/create', $data);
             }
-        } else {
-            $this->view('users/create', $data);
         }
     }
 
     /**
-     * Form chỉnh sửa người dùng
+     * Form sửa người dùng (Admin edit User)
      */
-    public function edit($user_id)
+    public function edit($id)
     {
-        $user = $this->userModel->findById($user_id);
+        if ($_SESSION['user_role'] !== 'admin') {
+            $this->redirect(BASE_URL);
+        }
+
+        $user = $this->userModel->getProfile($id);
+
         if (!$user) {
-            \set_flash_message('error', 'Không tìm thấy người dùng.');
-            $this->redirect(BASE_URL . '/user');
-            return;
+            \set_flash_message('error', 'User không tồn tại.');
+            $this->redirect(BASE_URL . '/user/index');
         }
-
-        // Không cho sửa admin khác (trừ khi là chính mình)
-        if ($_SESSION['user_role'] != 'admin' && $user['system_role'] == 'admin') {
-            \set_flash_message('error', 'Bạn không có quyền chỉnh sửa Admin.');
-            $this->redirect(BASE_URL . '/user');
-            return;
-        }
-
-        $profile = $this->profileModel->findByUserId($user_id);
 
         $data = [
-            'title' => 'Chỉnh sửa: ' . $user['NAME'],
-            'user_id' => $user_id,
-            'name' => $user['NAME'],
-            'email' => $user['email'],
-            'system_role' => $user['system_role'],
-            'student_id' => $profile['student_id'] ?? '',
-            'phone' => $profile['phone'] ?? '',
-            'gender' => $profile['gender'] ?? 'other',
-            'dob' => $profile['dob'] ?? '',
-            'address' => $profile['address'] ?? '',
-            'bio' => $profile['bio'] ?? '',
-            'name_err' => '',
-            'email_err' => ''
+            'user' => $user,
+            'title' => 'Chỉnh sửa thành viên'
         ];
 
         $this->view('users/edit', $data);
     }
 
     /**
-     * Cập nhật người dùng
+     * Xử lý cập nhật người dùng (Admin)
      */
-    public function update($user_id)
+    public function update($id)
     {
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/user');
+        if ($_SESSION['user_role'] !== 'admin') {
+            $this->redirect(BASE_URL);
         }
 
-        // CSRF Check
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ.');
-            $this->redirect(BASE_URL . '/user');
-            exit;
-        }
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $updateData = [
+                'name' => trim($_POST['name']),
+                'email' => trim($_POST['email']),
+                'system_role' => $_POST['system_role'],
+                'phone' => trim($_POST['phone']),
+                'gender' => $_POST['gender'],
+                'dob' => $_POST['dob'],
+                'address' => trim($_POST['address']),
+                'bio' => trim($_POST['bio'])
+            ];
 
-        $user = $this->userModel->findById($user_id);
-        if (!$user) {
-            \set_flash_message('error', 'Không tìm thấy người dùng.');
-            $this->redirect(BASE_URL . '/user');
-            return;
-        }
-
-        $profile_data = [
-            'student_id' => trim($_POST['student_id']),
-            'phone' => trim($_POST['phone']),
-            'gender' => $_POST['gender'],
-            'dob' => $_POST['dob'],
-            'address' => trim($_POST['address']),
-            'bio' => trim($_POST['bio'])
-        ];
-
-        $user_data = [
-            'name' => trim($_POST['name']),
-            'email' => trim($_POST['email'])
-        ];
-
-        // Validate
-        $errors = [];
-        if (empty($user_data['name'])) {
-            $errors['name_err'] = 'Vui lòng nhập tên';
-        }
-
-        if (empty($user_data['email'])) {
-            $errors['email_err'] = 'Vui lòng nhập email';
-        } elseif (!filter_var($user_data['email'], FILTER_VALIDATE_EMAIL)) {
-            $errors['email_err'] = 'Email không hợp lệ';
-        } else {
-            $existing = $this->userModel->findUserByEmail($user_data['email']);
-            if ($existing && $existing['id'] != $user_id) {
-                $errors['email_err'] = 'Email này đã được sử dụng';
+            // Nếu muốn đổi mật khẩu cho user
+            if (!empty($_POST['new_password'])) {
+                // Logic đổi pass riêng hoặc gộp vào đây tùy nhu cầu
+                $this->userModel->changePassword($id, $_POST['new_password']);
             }
-        }
 
-        if (empty($errors)) {
-            // Cập nhật users
-            if ($this->userModel->updateBasicInfo($user_id, $user_data)) {
-                // Cập nhật profile
-                $this->profileModel->createOrUpdate($user_id, $profile_data);
-
-                \log_activity('user_updated', 'Đã cập nhật thông tin người dùng (ID: ' . $user_id . ').');
-                \set_flash_message('success', 'Cập nhật người dùng thành công!');
-                $this->redirect(BASE_URL . '/user/view/' . $user_id);
+            if ($this->userModel->update($id, $updateData)) {
+                $this->logModel->create($_SESSION['user_id'], 'user_update', "Cập nhật user ID: $id");
+                \set_flash_message('success', 'Cập nhật thành công.');
+                $this->redirect(BASE_URL . '/user/index');
             } else {
-                \set_flash_message('error', 'Có lỗi CSDL, không thể cập nhật.');
-                $this->redirect(BASE_URL . '/user/edit/' . $user_id);
+                \set_flash_message('error', 'Có lỗi xảy ra.');
+                $this->redirect(BASE_URL . '/user/edit/' . $id);
             }
-        } else {
-            $data = array_merge($user_data, $profile_data, $errors, [
-                'title' => 'Chỉnh sửa: ' . $user['NAME'],
-                'user_id' => $user_id,
-                'system_role' => $user['system_role']
-            ]);
-            $this->view('users/edit', $data);
         }
     }
 
     /**
-     * Quản lý vai trò (Department Roles)
+     * Xóa người dùng (Soft delete)
      */
-    public function manage($user_id)
+    public function delete($id)
     {
-        $user = $this->userModel->findById($user_id);
-        if (!$user) {
-            $this->redirect(BASE_URL . '/user');
+        if ($_SESSION['user_role'] !== 'admin') {
+            $this->redirect(BASE_URL);
         }
 
-        $data = [
-            'title' => 'Phân quyền cho: ' . $user['NAME'],
-            'user' => $user,
-            'current_roles' => $this->userModel->getRolesForUser($user_id),
-            'all_departments' => $this->departmentModel->findAll(),
-            'all_roles' => $this->roleModel->findAll()
-        ];
-
-        $this->view('users/manage', $data);
-    }
-
-    /**
-     * Gán vai trò trong Ban
-     */
-    public function assignRole($user_id)
-    {
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/user');
-        }
-
-        // CSRF Check
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ.');
-            $this->redirect(BASE_URL . '/user');
-            exit;
-        }
-
-        $data = [
-            'user_id' => $user_id,
-            'department_id' => $_POST['department_id'],
-            'role_id' => $_POST['role_id']
-        ];
-
-        if (empty($data['department_id']) || empty($data['role_id'])) {
-            \set_flash_message('error', 'Vui lòng chọn Ban và Vai trò.');
-        } elseif ($this->userModel->assignRole($data)) {
-            \log_activity('user_role_assigned', 'Đã gán vai trò cho UserID: ' . $user_id);
-            \set_flash_message('success', 'Gán vai trò thành công!');
-        } else {
-            \set_flash_message('error', 'Gán thất bại. Có thể vai trò này đã tồn tại.');
-        }
-
-        $this->redirect(BASE_URL . '/user/manage/' . $user_id);
-    }
-
-    /**
-     * Thu hồi vai trò
-     */
-    public function revokeRole($user_id, $assignment_id)
-    {
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/user');
-        }
-
-        // CSRF Check
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ.');
-            $this->redirect(BASE_URL . '/user');
-            exit;
-        }
-
-        $this->userModel->revokeRole($assignment_id);
-        \log_activity('user_role_revoked', 'Đã thu hồi vai trò (AssignmentID: ' . $assignment_id . ').');
-        \set_flash_message('success', 'Thu hồi vai trò thành công!');
-        $this->redirect(BASE_URL . '/user/manage/' . $user_id);
-    }
-
-    /**
-     * Cập nhật System Role (chỉ admin)
-     */
-    public function updateSystemRole($user_id)
-    {
-        $this->requireRole(['admin']);
-
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/user');
-        }
-
-        // CSRF Check
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ.');
-            $this->redirect(BASE_URL . '/user');
-            exit;
-        }
-
-        $new_role = $_POST['system_role'];
-        $user = $this->userModel->findById($user_id);
-
-        // Logic bảo vệ
-        if ($user['id'] == $_SESSION['user_id']) {
-            \set_flash_message('error', 'Không thể thay đổi vai trò của chính mình.');
-            $this->redirect(BASE_URL . '/user');
-        } elseif ($user['system_role'] == 'admin') {
-            \set_flash_message('error', 'Không thể thay đổi vai trò của Admin khác.');
-            $this->redirect(BASE_URL . '/user');
-        } else {
-            $this->userModel->setSystemRole($user_id, $new_role);
-            \log_activity('user_system_role_updated', 'Đã cập nhật system_role cho UserID: ' . $user_id . ' thành [' . $new_role . '].');
-            \set_flash_message('success', 'Cập nhật vai trò hệ thống thành công!');
-            $this->redirect(BASE_URL . '/user');
-        }
-    }
-
-    /**
-     * Vô hiệu hóa/Kích hoạt tài khoản (soft delete)
-     */
-    public function toggleStatus($user_id)
-    {
-        $this->requireRole(['admin']);
-
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            $this->redirect(BASE_URL . '/user');
-        }
-
-        // CSRF Check
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
-            \set_flash_message('error', 'Yêu cầu không hợp lệ.');
-            $this->redirect(BASE_URL . '/user');
-            exit;
-        }
-
-        $user = $this->userModel->findById($user_id);
-        if (!$user) {
-            \set_flash_message('error', 'Không tìm thấy người dùng.');
-            $this->redirect(BASE_URL . '/user');
+        // Không được xóa chính mình
+        if ($id == $_SESSION['user_id']) {
+            \set_flash_message('error', 'Không thể xóa tài khoản đang đăng nhập.');
+            $this->redirect(BASE_URL . '/user/index');
             return;
         }
 
-        // Không cho vô hiệu hóa chính mình
-        if ($user['id'] == $_SESSION['user_id']) {
-            \set_flash_message('error', 'Không thể vô hiệu hóa tài khoản của chính mình.');
-            $this->redirect(BASE_URL . '/user');
-            return;
+        if ($this->userModel->delete($id)) {
+            $this->logModel->create($_SESSION['user_id'], 'user_delete', "Xóa user ID: $id");
+            \set_flash_message('success', 'Đã xóa người dùng.');
+        } else {
+            \set_flash_message('error', 'Xóa thất bại.');
         }
 
-        // Toggle status (cần thêm cột is_active trong DB)
-        // TODO: Implement toggleStatus in User model
-
-        \set_flash_message('success', 'Đã cập nhật trạng thái tài khoản.');
-        $this->redirect(BASE_URL . '/user');
+        $this->redirect(BASE_URL . '/user/index');
     }
 }

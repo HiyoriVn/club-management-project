@@ -1,5 +1,4 @@
 <?php
-// app/Models/Project.php
 
 namespace App\Models;
 
@@ -15,151 +14,145 @@ class Project
     }
 
     /**
-     * Lấy tất cả Dự án
-     * JOIN với users (Leader) và departments (Ban)
+     * Lấy danh sách Dự án (type='project')
+     * Có thể lọc theo status
      */
-    public function findAll()
+    public function getAllProjects($limit = 10, $status = null)
     {
-        // Dùng LEFT JOIN phòng khi leader_id hoặc department_id là NULL
-        // Dùng tên cột NAME (viết hoa) cho 2 bảng kia
-        $this->db->query("SELECT 
-                            p.*, 
-                            u.NAME as leader_name, 
-                            d.NAME as department_name 
-                        FROM projects p
-                        LEFT JOIN users u ON p.leader_id = u.id
-                        LEFT JOIN departments d ON p.department_id = d.id
-                        ORDER BY p.created_at DESC");
+        return $this->getByType('project', $limit, $status);
+    }
+
+    /**
+     * Lấy danh sách Sự kiện (type='event')
+     */
+    public function getAllEvents($limit = 10, $status = null)
+    {
+        return $this->getByType('event', $limit, $status);
+    }
+
+    /**
+     * Hàm nội bộ lấy theo type
+     */
+    private function getByType($type, $limit, $status)
+    {
+        $sql = "SELECT p.*, u.name as leader_name, d.name as department_name 
+                FROM projects p
+                LEFT JOIN users u ON p.leader_id = u.id
+                LEFT JOIN departments d ON p.department_id = d.id
+                WHERE p.type = :type";
+
+        if ($status) {
+            $sql .= " AND p.status = :status";
+        }
+
+        $sql .= " ORDER BY p.created_at DESC LIMIT :limit";
+
+        $this->db->query($sql);
+        $this->db->bind(':type', $type);
+        if ($status) {
+            $this->db->bind(':status', $status);
+        }
+        $this->db->bind(':limit', $limit, \PDO::PARAM_INT);
+
         return $this->db->resultSet();
     }
 
     /**
-     * Tìm 1 Dự án bằng ID
+     * Lấy chi tiết 1 Project/Event
      */
     public function findById($id)
     {
-        $this->db->query("SELECT * FROM projects WHERE id = :id");
+        $sql = "SELECT p.*, u.name as leader_name, d.name as department_name 
+                FROM projects p
+                LEFT JOIN users u ON p.leader_id = u.id
+                LEFT JOIN departments d ON p.department_id = d.id
+                WHERE p.id = :id";
+
+        $this->db->query($sql);
         $this->db->bind(':id', $id);
+
         return $this->db->single();
     }
 
     /**
-     * Tạo Dự án mới
-     * @param array $data
-     * @return boolean
+     * Tạo mới Project/Event
      */
     public function create($data)
     {
-        $this->db->query("INSERT INTO projects (NAME, description, start_date, end_date, leader_id, department_id, STATUS) 
-                         VALUES (:name, :description, :start_date, :end_date, :leader_id, :department_id, :status)");
+        $sql = "INSERT INTO projects (name, description, type, start_date, end_date, status, leader_id, department_id) 
+                VALUES (:name, :description, :type, :start_date, :end_date, :status, :leader_id, :department_id)";
+
+        $this->db->query($sql);
 
         $this->db->bind(':name', $data['name']);
-        $this->db->bind(':description', $data['description']);
-        $this->db->bind(':start_date', empty($data['start_date']) ? null : $data['start_date']);
-        $this->db->bind(':end_date', empty($data['end_date']) ? null : $data['end_date']);
-        $this->db->bind(':leader_id', empty($data['leader_id']) ? null : $data['leader_id']);
-        $this->db->bind(':department_id', empty($data['department_id']) ? null : $data['department_id']);
-        $this->db->bind(':status', $data['status']);
+        $this->db->bind(':description', $data['description'] ?? null);
+        $this->db->bind(':type', $data['type'] ?? 'project');
+        $this->db->bind(':start_date', !empty($data['start_date']) ? $data['start_date'] : null);
+        $this->db->bind(':end_date', !empty($data['end_date']) ? $data['end_date'] : null);
+        $this->db->bind(':status', $data['status'] ?? 'planning');
+        $this->db->bind(':leader_id', !empty($data['leader_id']) ? $data['leader_id'] : null);
+        $this->db->bind(':department_id', !empty($data['department_id']) ? $data['department_id'] : null);
 
-        return $this->db->execute();
+        if ($this->db->execute()) {
+            return $this->db->lastInsertId();
+        }
+        return false;
     }
 
     /**
-     * Cập nhật Dự án
+     * Cập nhật
      */
     public function update($id, $data)
     {
-        $this->db->query("UPDATE projects SET 
-                            NAME = :name, 
-                            description = :description, 
-                            start_date = :start_date, 
-                            end_date = :end_date, 
-                            leader_id = :leader_id, 
-                            department_id = :department_id, 
-                            STATUS = :status
-                         WHERE id = :id");
+        $sql = "UPDATE projects SET 
+                name = :name, 
+                description = :description, 
+                start_date = :start_date, 
+                end_date = :end_date, 
+                status = :status, 
+                leader_id = :leader_id, 
+                department_id = :department_id
+                WHERE id = :id";
+
+        $this->db->query($sql);
 
         $this->db->bind(':id', $id);
         $this->db->bind(':name', $data['name']);
-        $this->db->bind(':description', $data['description']);
-        $this->db->bind(':start_date', empty($data['start_date']) ? null : $data['start_date']);
-        $this->db->bind(':end_date', empty($data['end_date']) ? null : $data['end_date']);
-        $this->db->bind(':leader_id', empty($data['leader_id']) ? null : $data['leader_id']);
-        $this->db->bind(':department_id', empty($data['department_id']) ? null : $data['department_id']);
-        $this->db->bind(':status', $data['status']);
+        $this->db->bind(':description', $data['description'] ?? null);
+        $this->db->bind(':start_date', !empty($data['start_date']) ? $data['start_date'] : null);
+        $this->db->bind(':end_date', !empty($data['end_date']) ? $data['end_date'] : null);
+        $this->db->bind(':status', $data['status'] ?? 'planning');
+        $this->db->bind(':leader_id', !empty($data['leader_id']) ? $data['leader_id'] : null);
+        $this->db->bind(':department_id', !empty($data['department_id']) ? $data['department_id'] : null);
 
         return $this->db->execute();
     }
 
     /**
-     * Xóa Dự án
+     * Xóa dự án (Cần cẩn thận, có thể thêm ràng buộc xóa cascade ở DB rồi)
      */
     public function delete($id)
     {
-        // Nhờ CSDL (ON DELETE CASCADE), khi xóa project, 
-        // mọi project_members và tasks cũng bị xóa theo.
         $this->db->query("DELETE FROM projects WHERE id = :id");
         $this->db->bind(':id', $id);
         return $this->db->execute();
     }
-    
-    /**
-     * Lấy danh sách thành viên của 1 dự án
-     * @param int $project_id
-     * @return array
-     */
-    public function getMembers($project_id)
-    {
-        // JOIN với bảng users để lấy Tên
-        $this->db->query("SELECT 
-                            pm.id as assignment_id, 
-                            pm.role as project_role,
-                            u.id as user_id, 
-                            u.NAME
-                        FROM project_members pm
-                        JOIN users u ON pm.user_id = u.id
-                        WHERE pm.project_id = :project_id
-                        ORDER BY u.NAME ASC");
 
-        $this->db->bind(':project_id', $project_id);
-        return $this->db->resultSet();
-    }
-
-    /**
-     * Kiểm tra 1 user đã là thành viên dự án chưa
-     * @param int $project_id
-     * @param int $user_id
-     * @return boolean
-     */
-    public function isMember($project_id, $user_id)
-    {
-        $this->db->query("SELECT id FROM project_members WHERE project_id = :project_id AND user_id = :user_id");
-        $this->db->bind(':project_id', $project_id);
-        $this->db->bind(':user_id', $user_id);
-
-        $this->db->single();
-        return ($this->db->rowCount() > 0);
-    }
+    // --- MEMBER MANAGEMENT (project_members) ---
 
     /**
      * Thêm thành viên vào dự án
-     * @param int $project_id
-     * @param int $user_id
-     * @param string $role (vd: 'member', 'leader')
-     * @return boolean
      */
-    public function addMember($project_id, $user_id, $role)
+    public function addMember($projectId, $userId, $role = 'Member')
     {
-        // Kiểm tra trùng lặp trước khi INSERT
-        if ($this->isMember($project_id, $user_id)) {
-            return false; // Đã là thành viên
+        // Kiểm tra tồn tại
+        if ($this->checkMember($projectId, $userId)) {
+            return false;
         }
 
-        $this->db->query("INSERT INTO project_members (project_id, user_id, role) 
-                         VALUES (:project_id, :user_id, :role)");
-
-        $this->db->bind(':project_id', $project_id);
-        $this->db->bind(':user_id', $user_id);
+        $this->db->query("INSERT INTO project_members (project_id, user_id, role) VALUES (:pid, :uid, :role)");
+        $this->db->bind(':pid', $projectId);
+        $this->db->bind(':uid', $userId);
         $this->db->bind(':role', $role);
 
         return $this->db->execute();
@@ -167,117 +160,55 @@ class Project
 
     /**
      * Xóa thành viên khỏi dự án
-     * @param int $assignment_id ID của dòng trong bảng project_members
-     * @return boolean
      */
-    public function removeMember($assignment_id)
+    public function removeMember($projectId, $userId)
     {
-        $this->db->query("DELETE FROM project_members WHERE id = :assignment_id");
-        $this->db->bind(':assignment_id', $assignment_id);
+        $this->db->query("DELETE FROM project_members WHERE project_id = :pid AND user_id = :uid");
+        $this->db->bind(':pid', $projectId);
+        $this->db->bind(':uid', $userId);
         return $this->db->execute();
     }
 
     /**
-     * Lấy tất cả Tasks của 1 Dự án (đã nâng cấp)
-     * Dùng GROUP_CONCAT để lấy danh sách người được gán
+     * Lấy danh sách thành viên của dự án
      */
-    public function getTasks($project_id)
+    public function getMembers($projectId)
     {
-        $this->db->query("SELECT 
-                        t.*, 
-                        GROUP_CONCAT(u.NAME SEPARATOR ', ') as assigned_user_name
-                    FROM tasks t
-                    LEFT JOIN task_assignees ta ON t.id = ta.task_id
-                    LEFT JOIN users u ON ta.user_id = u.id
-                    WHERE t.project_id = :project_id
-                    GROUP BY t.id -- Nhóm theo Task ID
-                    ORDER BY t.created_at ASC");
+        $sql = "SELECT pm.*, u.name, u.email 
+                FROM project_members pm
+                JOIN users u ON pm.user_id = u.id
+                WHERE pm.project_id = :pid
+                ORDER BY pm.role ASC, u.name ASC";
 
-        $this->db->bind(':project_id', $project_id);
+        $this->db->query($sql);
+        $this->db->bind(':pid', $projectId);
         return $this->db->resultSet();
     }
 
     /**
-     * Tạo một Task mới (đã nâng cấp)
-     * @param array $data
-     * @return mixed Trả về ID của task mới nếu thành công, false nếu thất bại
+     * Kiểm tra user có trong dự án chưa
      */
-    public function createTask($data)
+    public function checkMember($projectId, $userId)
     {
-        $this->db->query("INSERT INTO tasks (project_id, title, description, status, start_date, due_date, color, attachment_link) 
-                     VALUES (:project_id, :title, :description, :status, :start_date, :due_date, :color, :attachment_link)");
-
-        $this->db->bind(':project_id', $data['project_id']);
-        $this->db->bind(':title', $data['title']);
-        $this->db->bind(':description', $data['description']);
-        $this->db->bind(':status', $data['status']); // Nhận status từ Controller (vd: 'backlog')
-
-        $this->db->bind(':start_date', empty($data['start_date']) ? null : $data['start_date']);
-        $this->db->bind(':due_date', empty($data['due_date']) ? null : $data['due_date']);
-        $this->db->bind(':color', empty($data['color']) ? '#007bff' : $data['color']);
-        $this->db->bind(':attachment_link', $data['attachment_link']);
-
-        // Thực thi và trả về ID
-        if ($this->db->execute()) {
-            return $this->db->lastInsertId(); // Rất quan trọng: trả về ID
-        } else {
-            return false;
-        }
+        $this->db->query("SELECT id FROM project_members WHERE project_id = :pid AND user_id = :uid");
+        $this->db->bind(':pid', $projectId);
+        $this->db->bind(':uid', $userId);
+        $this->db->single();
+        return $this->db->rowCount() > 0;
     }
 
     /**
-     * Cập nhật Trạng thái (Status) của Task
-     * @param int $task_id
-     * @param string $new_status ('todo', 'in_progress', 'done')
-     * @return boolean
+     * Lấy các dự án mà user tham gia (cho trang My Tasks/My Projects)
      */
-    public function updateTaskStatus($task_id, $new_status)
+    public function getProjectsByUser($userId)
     {
-        // Kiểm tra status hợp lệ
-        if (!in_array($new_status, ['todo', 'in_progress', 'done'])) {
-            return false;
-        }
-
-        $this->db->query("UPDATE tasks SET status = :status WHERE id = :id");
-        $this->db->bind(':status', $new_status);
-        $this->db->bind(':id', $task_id);
-
-        return $this->db->execute();
-    }
-
-    /**
-     * Xóa một Task
-     * @param int $task_id
-     * @return boolean
-     */
-    public function deleteTask($task_id)
-    {
-        $this->db->query("DELETE FROM tasks WHERE id = :id");
-        $this->db->bind(':id', $task_id);
-        return $this->db->execute();
-    }
-    /**
-     * Gán 1 task cho 1 user (dùng cho bảng task_assignees)
-     * @param int $task_id
-     * @param int $user_id
-     * @return boolean
-     */
-    public function assignTaskToUser($task_id, $user_id)
-    {
-        $this->db->query("INSERT INTO task_assignees (task_id, user_id) 
-                         VALUES (:task_id, :user_id)");
-        $this->db->bind(':task_id', $task_id);
-        $this->db->bind(':user_id', $user_id);
-
-        try {
-            return $this->db->execute();
-        } catch (\PDOException $e) {
-            // Bẫy lỗi "Duplicate key" (nếu đã gán rồi)
-            if ($e->getCode() == 23000) {
-                return true; // Coi như thành công
-            }
-            return false;
-        }
+        $sql = "SELECT p.*, pm.role as my_role
+                FROM projects p
+                JOIN project_members pm ON p.id = pm.project_id
+                WHERE pm.user_id = :uid
+                ORDER BY p.created_at DESC";
+        $this->db->query($sql);
+        $this->db->bind(':uid', $userId);
+        return $this->db->resultSet();
     }
 }
-
