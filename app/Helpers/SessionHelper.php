@@ -1,112 +1,153 @@
 <?php
 
+use App\Models\ActivityLog;
+
+// 1. Khởi tạo session nếu chưa có
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+/* =========================================================================
+ * PHẦN 1: FLASH MESSAGE & SESSION
+ * Dùng cho hiển thị thông báo (Alert)
+ * ========================================================================= */
+
 /**
- * Đặt một thông báo flash (sẽ hiển thị ở lần tải trang sau)
- * @param string $type Loại thông báo (vd: 'success', 'error', 'info')
- * @param string $message Nội dung
+ * Gán thông báo flash
+ * @param string $type Loại thông báo: 'success', 'error', 'warning', 'info'
+ * @param string $message Nội dung thông báo
  */
-function set_flash_message($type, $message)
-{
-    $_SESSION['flash_message'] = [
-        'type' => $type,
-        'message' => $message
-    ];
+if (!function_exists('set_flash_message')) {
+    function set_flash_message($type, $message)
+    {
+        $_SESSION['flash_message'] = [
+            'type' => $type,
+            'message' => $message
+        ];
+    }
 }
 
 /**
- * Hiển thị thông báo flash (nếu có)
- * Sửa lại: Thay vì echo HTML, hàm này sẽ echo một <script>
- * để gọi hàm JS showToast() (sẽ được định nghĩa ở footer.php)
+ * Lấy thông báo flash hiện tại và XÓA ngay sau khi lấy
+ * Dùng trong header.php để hiển thị Alert
+ * @return array|null Trả về mảng ['type', 'message'] hoặc null
  */
-function display_flash_message()
-{
-    // Kiểm tra xem có thông báo không
-    if (isset($_SESSION['flash_message'])) {
-
-        // Lấy thông tin
-        $type = $_SESSION['flash_message']['type']; // 'success', 'error', 'info'
-        $message = $_SESSION['flash_message']['message'];
-
-        // Xóa thông báo khỏi session
-        unset($_SESSION['flash_message']);
-
-        // In ra một đoạn script nhỏ
-        // addslashes() để đảm bảo chuỗi JS không bị lỗi nếu có dấu '
-        echo "<script>
-            document.addEventListener('DOMContentLoaded', function() {
-                showToast('" . addslashes($message) . "', '" . addslashes($type) . "');
-            });
-        </script>";
+if (!function_exists('get_flash_message')) {
+    function get_flash_message()
+    {
+        if (isset($_SESSION['flash_message'])) {
+            $message = $_SESSION['flash_message'];
+            unset($_SESSION['flash_message']); // Xóa ngay để không hiện lại khi F5
+            return $message;
+        }
+        return null;
     }
 }
 
 /**
- * Hàm tiện ích để ghi log hoạt động
-* @param string $action Mã hành động (vd: 'user_login', 'department_created')
-* @param string $details Chi tiết
-*/
-
-function log_activity($action, $details)
-{
-    // 1. Nạp Model (nếu chưa nạp)
-    if (!class_exists('App\Models\ActivityLog')) {
-        require_once ROOT_PATH . '/app/Models/ActivityLog.php';
-    }
-
-    // 2. Lấy user_id từ session (nếu đã đăng nhập)
-    $user_id = null;
-    if (isset($_SESSION['user_id'])) {
-        $user_id = $_SESSION['user_id'];
-    }
-
-    // 3. Tạo đối tượng và ghi log
-    try {
-        $logModel = new \App\Models\ActivityLog();
-        $logModel->create($user_id, $action, $details);
-    } catch (\Exception $e) {
-        // (Nếu ghi log thất bại thì cũng không làm "chết" ứng dụng)
-        // Có thể ghi lỗi này vào file log riêng nếu cần
-        error_log('Failed to write activity log: ' . $e->getMessage());
-    }
-}
-/**
- * Lọc (Sanitize) HTML để chống lỗi XSS
- * @param string $dirty_html HTML bẩn từ Trix editor
- * @return string HTML sạch đã được lọc
+ * [TƯƠNG THÍCH NGƯỢC]
+ * Nếu code cũ của bạn có chỗ nào gọi display_flash_message() mà chưa kịp sửa,
+ * hàm này sẽ giúp không bị lỗi, nhưng khuyên dùng get_flash_message() ở View hơn.
  */
-function purify_html($dirty_html)
-{
-    // 1. Đường dẫn đến file autoload của HTMLPurifier
-    $purifier_path = ROOT_PATH . '/app/libs/htmlpurifier-4.15.0/library/HTMLPurifier.auto.php';
-    if (!file_exists($purifier_path)) {
-        // Nếu không tìm thấy, trả về lỗi thay vì làm sập trang
-        return '<p style="color:red; font-weight:bold;">Lỗi: Không tìm thấy thư viện HTMLPurifier. Hãy kiểm tra lại đường dẫn.</p>';
+if (!function_exists('display_flash_message')) {
+    function display_flash_message()
+    {
+        // Tạm thời bỏ trống hoặc chuyển hướng sang logic mới nếu cần
+        // Vì header.php mới đã tự động gọi get_flash_message() rồi.
     }
-
-    require_once $purifier_path;
-
-    // 2. Cấu hình
-    $config = \HTMLPurifier_Config::createDefault();
-    $config->set('HTML.Allowed', 'p,b,strong,i,em,u,ul,ol,li,br,a[href]'); // Chỉ cho phép các thẻ này
-    $config->set('HTML.TargetBlank', true); // Tự động thêm target="_blank" cho link
-
-    // 3. Lọc
-    $purifier = new \HTMLPurifier($config);
-    $clean_html = $purifier->purify($dirty_html);
-
-    return $clean_html;
 }
+
+/* =========================================================================
+ * PHẦN 2: USER AUTH HELPERS
+ * Tiện ích check đăng nhập nhanh trong View
+ * ========================================================================= */
+
 /**
- * Hàm tiện ích để gửi thông báo (Chuyển từ index.php sang)
- * @param int $user_id Người nhận
- * @param string $title Tiêu đề
- * @param string $message Nội dung
+ * Kiểm tra user đã đăng nhập chưa
+ */
+if (!function_exists('is_logged_in')) {
+    function is_logged_in()
+    {
+        return isset($_SESSION['user_id']);
+    }
+}
+
+/**
+ * Lấy thông tin user hiện tại
+ * @param string $key Key cần lấy (id, name, email, role...), để trống lấy hết
+ */
+if (!function_exists('current_user')) {
+    function current_user($key = null)
+    {
+        if (!is_logged_in()) return null;
+
+        if ($key) {
+            return $_SESSION['user_' . $key] ?? null;
+        }
+        return $_SESSION;
+    }
+}
+
+/* =========================================================================
+ * PHẦN 3: SYSTEM UTILITIES
+ * Log, HTML Purifier (Đã chỉnh sửa để dùng Composer Autoload)
+ * ========================================================================= */
+
+/**
+ * Ghi log hoạt động
+ */
+if (!function_exists('log_activity')) {
+    function log_activity($action, $details)
+    {
+        // Kiểm tra login để lấy user_id
+        $user_id = $_SESSION['user_id'] ?? null;
+
+        try {
+            // Giả sử Model ActivityLog đã được Autoload qua Composer
+            // Nếu chưa, namespace App\Models\ActivityLog sẽ tự tìm file
+            $logModel = new ActivityLog();
+            $logModel->create($user_id, $action, $details);
+        } catch (\Exception $e) {
+            // Ghi log lỗi vào file hệ thống nếu DB lỗi
+            error_log('Failed to write activity log: ' . $e->getMessage());
+        }
+    }
+}
+
+/**
+ * Lọc HTML bẩn (Anti-XSS) dùng thư viện ezyang/htmlpurifier qua Composer
+ */
+if (!function_exists('purify_html')) {
+    function purify_html($dirty_html)
+    {
+        // Không cần require thủ công file library nữa vì đã có composer autoload
+
+        // Cấu hình
+        $config = HTMLPurifier_Config::createDefault();
+
+        // Chỉ cho phép các thẻ an toàn (tránh script, iframe...)
+        $config->set('HTML.Allowed', 'p,b,strong,i,em,u,ul,ol,li,br,a[href,target],img[src|width|height|alt]');
+        $config->set('HTML.TargetBlank', true); // Link tự mở tab mới
+
+        // Nếu muốn cho phép style cơ bản (màu sắc) thì bỏ comment dòng dưới:
+        // $config->set('CSS.AllowedProperties', 'font,font-size,font-weight,font-style,text-decoration,color,background-color,text-align');
+
+        $purifier = new HTMLPurifier($config);
+        return $purifier->purify($dirty_html);
+    }
+}
+
+/**
+ * Gửi thông báo (Notification)
+ * Lưu ý: Cần đảm bảo Model Notification và bảng notifications tồn tại
  */
 if (!function_exists('sendNotification')) {
     function sendNotification($user_id, $title, $message)
     {
-        // Sử dụng namespace đầy đủ để Autoload tìm thấy
-        $notificationModel = new \App\Models\Notification();
-        $notificationModel->create($user_id, $title, $message);
+        // Kiểm tra class tồn tại để tránh lỗi fatal nếu chưa có Model
+        if (class_exists('App\Models\Notification')) {
+            $notificationModel = new \App\Models\Notification();
+            $notificationModel->create($user_id, $title, $message);
+        }
     }
 }
