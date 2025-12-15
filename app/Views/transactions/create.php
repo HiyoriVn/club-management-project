@@ -1,84 +1,63 @@
-<?php
-// Nạp header MỚI
-require_once ROOT_PATH . '/app/Views/layout/header.php';
-?>
+<?php require_once 'app/Views/layout/header.php'; ?>
 
-<div class="bg-white shadow rounded-lg overflow-hidden max-w-3xl mx-auto">
+<div class="max-w-2xl mx-auto">
+    <div class="mb-5">
+        <a href="<?= BASE_URL ?>/transaction" class="text-gray-500 hover:text-gray-700 flex items-center">
+            <ion-icon name="arrow-back-outline" class="mr-1"></ion-icon> Quay lại danh sách
+        </a>
+    </div>
 
-    <form action="<?php echo BASE_URL; ?>/transaction/store" method="POST">
-        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+    <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+        <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Tạo phiếu Thu / Chi mới</h3>
+        </div>
 
-        <div class="p-6">
+        <form action="<?= BASE_URL ?>/transaction/create" method="POST" class="px-4 py-5 sm:p-6 space-y-6">
 
-            <div class="mb-5">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Loại Giao dịch: <sup>*</sup>
-                </label>
-                <div class="flex items-center space-x-6">
-                    <div class="flex items-center">
-                        <input id="type_expense" name="type" type="radio" value="expense"
-                            class="focus:ring-red-500 h-4 w-4 text-red-600 border-gray-300"
-                            <?php echo ($data['type'] == 'expense') ? 'checked' : ''; ?>>
-                        <label for="type_expense" class="ml-3 block text-sm font-medium text-red-700">
-                            Khoản CHI
-                        </label>
+            <div class="grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                <div class="sm:col-span-1">
+                    <label class="block text-sm font-medium text-gray-700">Loại giao dịch <span class="text-red-500">*</span></label>
+                    <select name="type" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="income">Thu (Income)</option>
+                        <option value="expense">Chi (Expense)</option>
+                    </select>
+                </div>
+
+                <div class="sm:col-span-1">
+                    <label class="block text-sm font-medium text-gray-700">Ngày giao dịch <span class="text-red-500">*</span></label>
+                    <input type="date" name="date" value="<?= date('Y-m-d') ?>" required
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Số tiền (VNĐ) <span class="text-red-500">*</span></label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="text-gray-500 sm:text-sm">₫</span>
                     </div>
-                    <div class="flex items-center">
-                        <input id="type_income" name="type" type="radio" value="income"
-                            class="focus:ring-green-500 h-4 w-4 text-green-600 border-gray-300"
-                            <?php echo ($data['type'] == 'income') ? 'checked' : ''; ?>>
-                        <label for="type_income" class="ml-3 block text-sm font-medium text-green-700">
-                            Khoản THU
-                        </label>
+                    <input type="number" name="amount" min="0" step="1000" required placeholder="0"
+                        class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md">
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span class="text-gray-500 sm:text-sm">VNĐ</span>
                     </div>
                 </div>
             </div>
 
-            <div class="mb-5">
-                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">
-                    Số tiền: <sup>*</sup>
-                </label>
-                <input type="number" name="amount" id="amount"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm <?php echo !empty($data['amount_err']) ? 'border-red-500' : ''; ?>"
-                    value="<?php echo htmlspecialchars($data['amount'] ?? ''); ?>">
-                <span class="text-red-600 text-sm"><?php echo $data['amount_err']; ?></span>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Mô tả chi tiết <span class="text-red-500">*</span></label>
+                <textarea name="description" rows="3" required placeholder="VD: Thu quỹ tháng 10, Mua nước uống sự kiện..."
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
             </div>
 
-            <div class="mb-5">
-                <label for="date" class="block text-sm font-medium text-gray-700 mb-1">
-                    Ngày: <sup>*</sup>
-                </label>
-                <input type="date" name="date" id="date"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm <?php echo !empty($data['date_err']) ? 'border-red-500' : ''; ?>"
-                    value="<?php echo htmlspecialchars($data['date'] ?? ''); ?>">
-                <span class="text-red-600 text-sm"><?php echo $data['date_err']; ?></span>
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <ion-icon name="save-outline" class="mr-2 text-lg"></ion-icon>
+                    Lưu giao dịch
+                </button>
             </div>
-
-            <div class="mb-5">
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-                    Mô tả: <sup>*</sup>
-                </label>
-                <textarea name="description" id="description" rows="4"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm <?php echo !empty($data['description_err']) ? 'border-red-500' : ''; ?>"><?php echo htmlspecialchars($data['description'] ?? ''); ?></textarea>
-                <span class="text-red-600 text-sm"><?php echo $data['description_err']; ?></span>
-            </div>
-
-        </div>
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-4">
-            <a href="<?php echo BASE_URL; ?>/transaction"
-                class="btn btn-secondary-outline">
-                Hủy bỏ
-            </a>
-            <button type="submit"
-                class="btn btn-success">
-                Lưu lại
-            </button>
-        </div>
-
-    </form>
+        </form>
+    </div>
 </div>
 
-<?php
-// Nạp footer MỚI
-require_once ROOT_PATH . '/app/Views/layout/footer.php';
-?>
+<?php require_once 'app/Views/layout/footer.php'; ?>

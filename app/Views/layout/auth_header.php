@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $data['title'] ?? 'CLB Management'; ?></title>
+    <title><?php echo $data['title'] ?? 'Đăng nhập - CLB Management'; ?></title>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
@@ -14,7 +14,6 @@
         /* Subtle Pattern Background */
         .auth-background {
             background-color: #0f172a;
-            /* slate-900 */
             background-image:
                 radial-gradient(at 40% 20%, hsla(217, 91%, 60%, 0.3) 0px, transparent 50%),
                 radial-gradient(at 80% 0%, hsla(262, 91%, 60%, 0.3) 0px, transparent 50%),
@@ -75,5 +74,9 @@
     </style>
 </head>
 
-<body class="h-full animated-gradient">
-    <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+<body class="h-full auth-background relative overflow-hidden">
+    <div class="particle w-32 h-32 top-10 left-10 delay-100"></div>
+    <div class="particle w-20 h-20 top-1/2 right-10 delay-300"></div>
+    <div class="particle w-40 h-40 bottom-10 left-1/3 delay-500"></div>
+
+    <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">

@@ -1,9 +1,7 @@
-</div> <!-- End container -->
-
-<!-- Toast Container -->
-<div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 w-full max-w-sm">
-    <div id="toast-template" class="hidden transform transition-all duration-300 ease-in-out">
-        <div class="max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden">
+</div>
+<div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 w-full max-w-sm pointer-events-none">
+    <div id="toast-template" class="hidden transform transition-all duration-300 ease-in-out pointer-events-auto">
+        <div class="max-w-sm w-full bg-white shadow-lg rounded-lg ring-1 ring-black ring-opacity-5 overflow-hidden">
             <div class="p-4">
                 <div class="flex items-start">
                     <div class="flex-shrink-0">
@@ -76,7 +74,16 @@
     }
 </script>
 
-<?php \display_flash_message(); ?>
+<?php
+$flash = \get_flash_message();
+if ($flash) {
+    echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                showToast('" . addslashes($flash['message']) . "', '" . $flash['type'] . "');
+            });
+        </script>";
+}
+?>
 </body>
 
 </html>

@@ -1,85 +1,51 @@
-<?php
-// Nạp header MỚI
-require_once ROOT_PATH . '/app/Views/layout/header.php';
-?>
+<?php require_once 'app/Views/layout/header.php'; ?>
 
-<div class="bg-white shadow rounded-lg overflow-hidden max-w-3xl mx-auto">
+<div class="max-w-4xl mx-auto">
+    <div class="mb-5">
+        <a href="<?= BASE_URL ?>/announcement" class="text-gray-500 hover:text-gray-700 flex items-center">
+            <ion-icon name="arrow-back-outline" class="mr-1"></ion-icon> Hủy bỏ
+        </a>
+    </div>
 
-    <form action="<?php echo BASE_URL; ?>/announcement/update/<?php echo $data['id']; ?>" method="POST">
-        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-yellow-50">
+            <h3 class="text-lg font-bold text-yellow-800">Chỉnh sửa thông báo</h3>
+        </div>
 
-        <div class="p-6">
+        <form action="<?= BASE_URL ?>/announcement/edit/<?= $announcement['id'] ?>" method="POST" class="p-6 space-y-6">
 
-            <div class="mb-5">
-                <label for="form_title" class="block text-sm font-medium text-gray-700 mb-1">
-                    Tiêu đề: <sup>*</sup>
-                </label>
-                <input type="text" name="form_title" id="form_title"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm <?php echo !empty($data['title_err']) ? 'border-red-500' : ''; ?>"
-                    value="<?php echo htmlspecialchars($data['form_title'] ?? ''); ?>">
-                <span class="text-red-600 text-sm"><?php echo $data['title_err']; ?></span>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Tiêu đề</label>
+                <input type="text" name="title" value="<?= htmlspecialchars($announcement['title']) ?>" required
+                    class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-lg py-3">
             </div>
 
-            <div class="mb-5">
-                <label for="content" class="block text-sm font-medium text-gray-700 mb-1">
-                    Nội dung:
-                </label>
-                <input type="hidden" name="content" id="content"
-                    value="<?php echo htmlspecialchars($data['content'] ?? ''); ?>">
-
-                <trix-editor input="content" class="min-h-[200px]"></trix-editor>
-            </div>
-
-            <div class="mb-5">
-                <label for="target" class="block text-sm font-medium text-gray-700 mb-1">
-                    Gửi tới:
-                </label>
-                <select name="target" id="target"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-
-                    <?php
-                    // Logic "selected" cho dropdown (đã có trong file cũ của bạn)
-                    $current_target = 'internal';
-                    if ($data['target_department_id'] === NULL) {
-                        $current_target = $data['visibility']; // 'public' hoặc 'internal'
-                    } else {
-                        $current_target = $data['target_department_id']; // vd: '1', '2'
-                    }
-                    ?>
-
-                    <option value="public" <?php echo ($current_target == 'public') ? 'selected' : ''; ?>>
-                    Thông báo Công khai
-                    </option>
-                    <option value="internal" <?php echo ($current_target == 'internal') ? 'selected' : ''; ?>>
-                    Thông báo Nội bộ CLB
-                    </option>
-                    <optgroup label="Chỉ gửi cho Ban Cụ thể:">
-                        <?php foreach ($data['all_departments'] as $dep) : ?>
-                            <option value="<?php echo $dep['id']; ?>" <?php echo ($current_target == $dep['id']) ? 'selected' : ''; ?>>
-                                Ban: <?php echo htmlspecialchars($dep['NAME']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </optgroup>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Gửi tới</label>
+                <select name="target_department_id" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <option value="" <?= empty($announcement['target_department_id']) ? 'selected' : '' ?>>-- Toàn thể CLB --</option>
+                    <?php foreach ($departments as $dept): ?>
+                        <option value="<?= $dept['id'] ?>" <?= ($announcement['target_department_id'] == $dept['id']) ? 'selected' : '' ?>>
+                            Ban: <?= htmlspecialchars($dept['name']) ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
-        </div>
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-4">
-            <a href="<?php echo BASE_URL; ?>/announcement"
-                class="btn btn-secondary-outline">
-                Hủy bỏ
-            </a>
-            <button type="submit"
-                class="btn btn-success">
-                <ion-icon name="save-outline" class="-ml-1 mr-2 h-5 w-5"></ion-icon>
-                Cập nhật
-            </button>
-        </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Nội dung</label>
+                <input id="content" type="hidden" name="content" value="<?= htmlspecialchars($announcement['content']) ?>">
+                <trix-editor input="content" class="min-h-[200px] border-gray-300 rounded-md"></trix-editor>
+            </div>
 
-    </form>
+            <div class="flex justify-end pt-4">
+                <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
+                    <ion-icon name="save-outline" class="mr-2 text-lg"></ion-icon>
+                    Cập nhật
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
-<?php
-// Nạp footer MỚI
-require_once ROOT_PATH . '/app/Views/layout/footer.php';
-?>
+<?php require_once 'app/Views/layout/footer.php'; ?>

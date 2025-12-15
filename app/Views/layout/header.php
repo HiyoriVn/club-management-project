@@ -1,112 +1,237 @@
 <?php
-// Helper để active menu
-function isActive($path)
-{
-    $uri = $_SERVER['REQUEST_URI'];
-    return strpos($uri, $path) !== false ? 'active' : '';
+// Helper kiểm tra active menu
+if (!function_exists('isActive')) {
+    function isActive($path)
+    {
+        $uri = $_SERVER['REQUEST_URI'];
+        // Kiểm tra tương đối
+        return strpos($uri, $path) !== false ? 'bg-gray-100 text-indigo-600 border-r-4 border-indigo-600' : 'text-gray-700 hover:bg-gray-50';
+    }
 }
+
+// Xử lý thông báo (Tạm thời disable vì Model Notification đã bỏ ở V2)
+// Có thể thay thế bằng đếm Announcement mới hoặc Task mới sau này
+$unread_notifications_count = 0;
 ?>
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="h-full bg-gray-100">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= isset($title) ? $title . ' - Club Management' : 'Club Management' ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="<?= BASE_URL ?>/css/custom.css" rel="stylesheet">
+    <title><?php echo $data['title'] ?? 'CLB Management'; ?></title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link rel="stylesheet" type="text/css" href="<?php echo BASE_URL; ?>/css/custom.css">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.8/dist/trix.css">
+    <script type="text/javascript" src="https://unpkg.com/trix@2.0.8/dist/trix.umd.min.js" defer></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+
+    <style>
+        /* Trix Editor Styling */
+        trix-editor {
+            background-color: white;
+            border-radius: 0.375rem;
+            border-color: #D1D5DB;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        trix-editor:focus-within {
+            --tw-ring-color: #2563EB;
+            border-color: #2563EB;
+        }
+
+        /* Custom Scrollbar */
+        main.overflow-y-auto {
+            scrollbar-width: thin;
+            scrollbar-color: #a1a1aa #f1f5f9;
+        }
+
+        main.overflow-y-auto::-webkit-scrollbar,
+        .overflow-x-auto::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        main.overflow-y-auto::-webkit-scrollbar-thumb,
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background-color: #a1a1aa;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+
+        main.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+            background-color: #71717a;
+        }
+
+        main.overflow-y-auto::-webkit-scrollbar-track,
+        .overflow-x-auto::-webkit-scrollbar-track {
+            background: transparent;
+        }
+    </style>
 </head>
 
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="<?= BASE_URL ?>">Club Manager</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+<body class="h-full">
+    <div class="flex h-full">
 
-            <?php if (isset($_SESSION['user_id'])): ?>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link <?= isActive('/dashboard') ?>" href="<?= BASE_URL ?>/dashboard">
-                                <i class="fas fa-tachometer-alt me-1"></i> Tổng quan
-                            </a>
-                        </li>
+        <div class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
+            <div class="flex flex-col flex-grow bg-white pt-5 shadow-lg border-r border-gray-200">
 
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle <?= isActive('/project') ?>" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-project-diagram me-1"></i> Hoạt động
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="<?= BASE_URL ?>/project">Tất cả Dự án & Sự kiện</a></li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item" href="<?= BASE_URL ?>/project?type=project">Chỉ Dự án</a></li>
-                                <li><a class="dropdown-item" href="<?= BASE_URL ?>/project?type=event">Chỉ Sự kiện</a></li>
-                            </ul>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link <?= isActive('/department') ?>" href="<?= BASE_URL ?>/department">
-                                <i class="fas fa-users me-1"></i> Ban chuyên môn
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link <?= isActive('/user') ?>" href="<?= BASE_URL ?>/user">
-                                <i class="fas fa-user-friends me-1"></i> Thành viên
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link <?= isActive('/transaction') ?>" href="<?= BASE_URL ?>/transaction">
-                                <i class="fas fa-wallet me-1"></i> Tài chính
-                            </a>
-                        </li>
-
-                        <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
-                            <li class="nav-item">
-                                <a class="nav-link <?= isActive('/report') ?>" href="<?= BASE_URL ?>/report/activity_logs">
-                                    <i class="fas fa-file-alt me-1"></i> Báo cáo
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link <?= isActive('/setting') ?>" href="<?= BASE_URL ?>/setting">
-                                    <i class="fas fa-cog me-1"></i> Cài đặt
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-
-                    <ul class="navbar-nav">
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle me-1"></i> <?= $_SESSION['user_name'] ?? 'User' ?>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="<?= BASE_URL ?>/user/profile"><i class="fas fa-id-card me-2"></i>Hồ sơ</a></li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/auth/logout"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
-                            </ul>
-                        </li>
-                    </ul>
+                <div class="flex items-center flex-shrink-0 px-6 mb-8">
+                    <div class="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                        <ion-icon name="school-outline" class="text-white text-2xl"></ion-icon>
+                    </div>
+                    <span class="text-xl font-bold text-gray-900">CLB Management</span>
                 </div>
-            <?php endif; ?>
-        </div>
-    </nav>
 
-    <div class="container main-content">
-        <?php
-        $flash = \get_flash_message();
-        if ($flash):
-        ?>
-            <div class="alert alert-<?= $flash['type'] == 'error' ? 'danger' : 'success' ?> alert-dismissible fade show">
-                <?= $flash['message'] ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <nav class="flex-1 px-4 space-y-1 overflow-y-auto pb-4">
+
+                    <a href="<?php echo BASE_URL; ?>/dashboard"
+                        class="<?php echo isActive('/dashboard'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                        <ion-icon name="home-outline" class="mr-3 h-5 w-5"></ion-icon>
+                        Dashboard
+                    </a>
+
+                    <a href="<?php echo BASE_URL; ?>/project?type=event"
+                        class="<?php echo isActive('type=event'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                        <ion-icon name="calendar-outline" class="mr-3 h-5 w-5"></ion-icon>
+                        Sự kiện
+                    </a>
+
+                    <a href="<?php echo BASE_URL; ?>/announcement"
+                        class="<?php echo isActive('/announcement'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                        <ion-icon name="megaphone-outline" class="mr-3 h-5 w-5"></ion-icon>
+                        Thông báo
+                    </a>
+
+                    <a href="<?php echo BASE_URL; ?>/project?type=project"
+                        class="<?php echo isActive('type=project'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                        <ion-icon name="briefcase-outline" class="mr-3 h-5 w-5"></ion-icon>
+                        Dự án
+                    </a>
+
+                    <a href="<?php echo BASE_URL; ?>/file"
+                        class="<?php echo isActive('/file'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                        <ion-icon name="folder-outline" class="mr-3 h-5 w-5"></ion-icon>
+                        Tài liệu
+                    </a>
+
+                    <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'subadmin'])): ?>
+                        <div class="pt-6">
+                            <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                Quản trị
+                            </p>
+
+                            <a href="<?php echo BASE_URL; ?>/department"
+                                class="<?php echo isActive('/department'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                                <ion-icon name="git-network-outline" class="mr-3 h-5 w-5"></ion-icon>
+                                Quản lý Ban
+                            </a>
+
+                            <a href="<?php echo BASE_URL; ?>/user"
+                                class="<?php echo isActive('/user'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                                <ion-icon name="people-outline" class="mr-3 h-5 w-5"></ion-icon>
+                                Quản lý Người dùng
+                            </a>
+
+                            <a href="<?php echo BASE_URL; ?>/transaction"
+                                class="<?php echo isActive('/transaction'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                                <ion-icon name="cash-outline" class="mr-3 h-5 w-5"></ion-icon>
+                                Quản lý Quỹ
+                            </a>
+
+                            <a href="<?php echo BASE_URL; ?>/report"
+                                class="<?php echo isActive('/report'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                                <ion-icon name="stats-chart-outline" class="mr-3 h-5 w-5"></ion-icon>
+                                Báo cáo & Thống kê
+                            </a>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin'): ?>
+                        <div class="pt-6">
+                            <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                Hệ thống
+                            </p>
+
+                            <a href="<?php echo BASE_URL; ?>/report/activity_logs"
+                                class="<?php echo isActive('/activity_logs'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                                <ion-icon name="clipboard-outline" class="mr-3 h-5 w-5"></ion-icon>
+                                Nhật ký hoạt động
+                            </a>
+
+                            <a href="<?php echo BASE_URL; ?>/settings"
+                                class="<?php echo isActive('/settings'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                                <ion-icon name="settings-outline" class="mr-3 h-5 w-5"></ion-icon>
+                                Cài đặt hệ thống
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </nav>
+
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <div class="flex-shrink-0 border-t border-gray-200 p-4">
+                        <a href="<?php echo BASE_URL; ?>/user/profile" class="flex items-center group">
+                            <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                <span class="text-indigo-600 font-medium text-sm">
+                                    <?php echo strtoupper(substr($_SESSION['user_name'], 0, 2)); ?>
+                                </span>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <p class="text-sm font-medium text-gray-900 group-hover:text-indigo-600">
+                                    <?php echo htmlspecialchars($_SESSION['user_name']); ?>
+                                </p>
+                                <p class="text-xs text-gray-500">Xem hồ sơ</p>
+                            </div>
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
-        <?php endif; ?>
+        </div>
+
+        <div class="flex flex-col flex-1 md:pl-64">
+
+            <div class="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow-sm border-b border-gray-200">
+                <div class="flex-1 px-4 flex justify-between items-center sm:px-6 md:px-8">
+
+                    <h1 class="text-xl font-semibold text-gray-900">
+                        <?php echo $data['title'] ?? 'Dashboard'; ?>
+                    </h1>
+
+                    <div class="ml-4 flex items-center space-x-4">
+
+                        <button type="button" class="relative p-2 rounded-full text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none transition-colors">
+                            <ion-icon name="notifications-outline" class="h-6 w-6"></ion-icon>
+                            <?php if ($unread_notifications_count > 0): ?>
+                                <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                            <?php endif; ?>
+                        </button>
+
+                        <?php if (isset($_SESSION['user_id'])): ?>
+                            <a href="<?php echo BASE_URL; ?>/auth/logout"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                <ion-icon name="log-out-outline" class="mr-2 h-4 w-4"></ion-icon>
+                                Đăng xuất
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+
+            <main class="flex-1 overflow-y-auto bg-gray-50">
+                <div class="py-6 px-4 sm:px-6 md:px-8">
+
+                    <?php
+                    $flash = \get_flash_message();
+                    if ($flash) {
+                        // Gọi JS để hiển thị Toast
+                        echo "<script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                showToast('" . addslashes($flash['message']) . "', '" . $flash['type'] . "');
+                            });
+                        </script>";
+                    }
+                    ?>

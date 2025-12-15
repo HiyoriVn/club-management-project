@@ -1,46 +1,49 @@
-<?php
-// app/Views/auth/reset.php
-// Nạp header MỚI (Đã bao gồm flash message)
-require_once ROOT_PATH . '/app/Views/layout/header.php';
-?>
+<?php require_once 'app/Views/layout/auth_header.php'; ?>
 
-<div class="flex items-center justify-center min-h-full py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-lg">
-        <div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                Đặt Lại Mật Khẩu Mới
-            </h2>
-        </div>
+<div class="max-w-md w-full space-y-8 glass-card p-10 rounded-2xl shadow-2xl relative z-10">
+    <div class="text-center">
+        <h2 class="mt-4 text-3xl font-extrabold text-gray-900 tracking-tight">
+            Đặt lại mật khẩu
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+            Tạo mật khẩu mới cho tài khoản của bạn
+        </p>
+    </div>
 
-        <form class="mt-8 space-y-6" action="<?php echo BASE_URL; ?>/auth/update_password" method="POST">
-            <input type="hidden" name="token" value="<?php echo htmlspecialchars($data['token']); ?>">
+    <form class="mt-8 space-y-6" action="<?= BASE_URL ?>/auth/reset" method="POST">
+        <input type="hidden" name="token" value="<?= htmlspecialchars($_GET['token'] ?? '') ?>">
 
-            <div class="rounded-md shadow-sm space-y-4">
-                <div>
-                    <label for="password" class="sr-only"> Mật khẩu mới </label>
+        <div class="rounded-md shadow-sm -space-y-px">
+            <div>
+                <label for="password" class="sr-only">Mật khẩu mới</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <ion-icon name="lock-closed-outline" class="text-gray-400 text-lg"></ion-icon>
+                    </div>
                     <input id="password" name="password" type="password" required
-                        class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                        class="appearance-none rounded-t-md relative block w-full px-10 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                         placeholder="Mật khẩu mới">
                 </div>
-                <div>
-                    <label for="confirm_password" class="sr-only"> Xác nhận mật khẩu mới </label>
+            </div>
+            <div>
+                <label for="confirm_password" class="sr-only">Xác nhận mật khẩu</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <ion-icon name="checkmark-circle-outline" class="text-gray-400 text-lg"></ion-icon>
+                    </div>
                     <input id="confirm_password" name="confirm_password" type="password" required
-                        class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                        placeholder="Xác nhận mật khẩu mới">
+                        class="appearance-none rounded-b-md relative block w-full px-10 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                        placeholder="Nhập lại mật khẩu mới">
                 </div>
             </div>
+        </div>
 
-            <div>
-                <button type="submit" class="btn btn-primary w-full">
-                    Cập Nhật Mật Khẩu
-                </button>
-            </div>
-        </form>
-    </div>
+        <div>
+            <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-md">
+                Đổi mật khẩu
+            </button>
+        </div>
+    </form>
 </div>
 
-
-<?php
-// Nạp footer MỚI
-require_once ROOT_PATH . '/app/Views/layout/footer.php';
-?>
+<?php require_once 'app/Views/layout/auth_footer.php'; ?>
