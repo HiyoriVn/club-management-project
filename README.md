@@ -18,7 +18,7 @@ Nền tảng quản lý tập trung dành cho các Câu lạc bộ, hỗ trợ q
 Mở **Terminal** (hoặc Git Bash/CMD) tại thư mục `htdocs` của XAMPP (thường là `C:\xampp\htdocs`) và chạy lệnh:
 1.  Tải source code về máy.
     ```bash
-    git clone [https://github.com/HiyoriVn/club-management-project](https://github.com/username/club-management-project.git)
+    git clone https://github.com/HiyoriVn/club-management-project
     ```
 2.  Di chuyển vào thư mục của dụ án
     ```bash
