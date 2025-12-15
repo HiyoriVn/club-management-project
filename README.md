@@ -1,8 +1,8 @@
-# 🏫 Hệ thống Quản lý Câu lạc bộ (Club Management System)
+# Hệ thống Quản lý Câu lạc bộ 
 
-Nền tảng quản lý tập trung dành cho các Câu lạc bộ, hỗ trợ quản lý thành viên, dự án, tài chính và sự kiện. Được xây dựng trên nền tảng PHP thuần (MVC Pattern) hiệu năng cao.
+Nền tảng quản lý tập trung dành cho các Câu lạc bộ, hỗ trợ quản lý thành viên, dự án, tài chính và sự kiện.
 
-## 📋 Yêu cầu hệ thống
+## Yêu cầu hệ thống
 
 | Thành phần | Yêu cầu tối thiểu |
 | :--- | :--- | 
@@ -69,7 +69,7 @@ Truy cập trình duyệt theo đường dẫn:
 
 ---
 
-## 🚀 Hướng dẫn cài đặt trên aaPanel (Linux Server)
+## Hướng dẫn cài đặt trên aaPanel (Linux Server)
 
 ### Bước 1: Tạo Website trên aaPanel
 1.  Đăng nhập aaPanel, vào mục **Website** -> **Add site**.
@@ -124,7 +124,7 @@ Dự án chạy thông qua file `index.php` trong thư mục `public`. Bạn c�
 
 ---
 
-## 🔐 Tài khoản Admin mặc định
+## Tài khoản Admin mặc định
 
 Sau khi cài đặt, bạn có thể đăng nhập bằng tài khoản Admin được tạo sẵn:
 
@@ -132,7 +132,7 @@ Sau khi cài đặt, bạn có thể đăng nhập bằng tài khoản Admin đ�
 * **Mật khẩu**: `password`
 ---
 
-## ⚠️ Lưu ý Config (Tùy chỉnh)
+## Lưu ý Config (Tùy chỉnh)
 
 Nếu bạn cần tùy chỉnh sâu hơn các hằng số hệ thống mà không có trong `.env`, hãy mở file:
 `config/config.php`
