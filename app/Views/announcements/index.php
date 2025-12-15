@@ -1,4 +1,4 @@
-<?php require_once 'app/Views/layout/header.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/header.php'; ?>
 
 <div class="max-w-5xl mx-auto">
     <div class="flex justify-between items-center mb-6">
@@ -85,4 +85,4 @@
     </div>
 </div>
 
-<?php require_once 'app/Views/layout/footer.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/footer.php'; ?>

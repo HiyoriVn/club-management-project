@@ -95,12 +95,6 @@ $unread_notifications_count = 0;
                         Dashboard
                     </a>
 
-                    <a href="<?php echo BASE_URL; ?>/project?type=event"
-                        class="<?php echo isActive('type=event'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-                        <ion-icon name="calendar-outline" class="mr-3 h-5 w-5"></ion-icon>
-                        Sự kiện
-                    </a>
-
                     <a href="<?php echo BASE_URL; ?>/announcement"
                         class="<?php echo isActive('/announcement'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
                         <ion-icon name="megaphone-outline" class="mr-3 h-5 w-5"></ion-icon>
@@ -137,36 +131,10 @@ $unread_notifications_count = 0;
                                 Quản lý Người dùng
                             </a>
 
-                            <a href="<?php echo BASE_URL; ?>/transaction"
-                                class="<?php echo isActive('/transaction'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-                                <ion-icon name="cash-outline" class="mr-3 h-5 w-5"></ion-icon>
-                                Quản lý Quỹ
-                            </a>
-
                             <a href="<?php echo BASE_URL; ?>/report"
                                 class="<?php echo isActive('/report'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
                                 <ion-icon name="stats-chart-outline" class="mr-3 h-5 w-5"></ion-icon>
                                 Báo cáo & Thống kê
-                            </a>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin'): ?>
-                        <div class="pt-6">
-                            <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                                Hệ thống
-                            </p>
-
-                            <a href="<?php echo BASE_URL; ?>/report/activity_logs"
-                                class="<?php echo isActive('/activity_logs'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-                                <ion-icon name="clipboard-outline" class="mr-3 h-5 w-5"></ion-icon>
-                                Nhật ký hoạt động
-                            </a>
-
-                            <a href="<?php echo BASE_URL; ?>/settings"
-                                class="<?php echo isActive('/settings'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-                                <ion-icon name="settings-outline" class="mr-3 h-5 w-5"></ion-icon>
-                                Cài đặt hệ thống
                             </a>
                         </div>
                     <?php endif; ?>

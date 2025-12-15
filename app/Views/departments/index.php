@@ -1,4 +1,4 @@
-<?php require_once 'app/Views/layout/header.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/header.php'; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="text-xl font-bold text-gray-800 flex items-center">
@@ -61,4 +61,4 @@
     <?php endif; ?>
 </div>
 
-<?php require_once 'app/Views/layout/footer.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/footer.php'; ?>

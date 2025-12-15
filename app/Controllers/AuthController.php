@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Controllers;
 
 use App\Core\Controller;
@@ -44,13 +45,17 @@ class AuthController extends Controller
 
         if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             $this->redirect(BASE_URL . '/auth/login');
+            return; // ✅ FIX: Thêm return
         }
 
-        // CSRF Check 
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || $_POST['csrf_token'] != $_SESSION['csrf_token']) {
+        // ✅ FIX: CSRF Check với return
+        if (
+            !isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) ||
+            $_POST['csrf_token'] !== $_SESSION['csrf_token']
+        ) {
             \set_flash_message('error', 'Phiên làm việc không hợp lệ. Vui lòng tải lại trang.');
             $this->redirect(BASE_URL . '/auth/login');
-            exit;
+            return; // ✅ Dừng execution
         }
 
         $email = trim($_POST['email'] ?? '');
@@ -77,6 +82,7 @@ class AuthController extends Controller
 
                 \set_flash_message('success', 'Chào mừng trở lại, ' . htmlspecialchars($loggedInUser['name']) . '!');
                 $this->redirect(BASE_URL);
+                return; // ✅ FIX: Thêm return
             } else {
                 $data['password_err'] = 'Email/Mật khẩu không đúng hoặc tài khoản bị khóa.';
                 $this->view('auth/login', $data);
@@ -114,29 +120,32 @@ class AuthController extends Controller
     {
         $this->requireGuest();
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $email = trim($_POST['email']);
-            $user = $this->userModel->findByEmail($email);
-
-            if ($user && $user['is_active']) {
-                $token = bin2hex(random_bytes(32));
-                $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
-                $this->userModel->updateResetToken($user['id'], $token, $expires);
-
-                $resetLink = BASE_URL . '/auth/reset?token=' . $token;
-
-                if ($this->sendEmail($user['email'], $user['name'], $resetLink)) {
-                    \set_flash_message('success', 'Đã gửi link đặt lại mật khẩu vào email của bạn.');
-                } else {
-                    \set_flash_message('error', 'Không thể gửi email. Vui lòng thử lại sau.');
-                }
-            } else {
-                // Bảo mật: Không thông báo rõ ràng email có tồn tại hay không
-                \set_flash_message('success', 'Nếu email tồn tại, link đặt lại mật khẩu sẽ được gửi.');
-            }
-
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
             $this->redirect(BASE_URL . '/auth/forgot');
+            return; // ✅ FIX: Thêm return
         }
+
+        $email = trim($_POST['email']);
+        $user = $this->userModel->findByEmail($email);
+
+        if ($user && $user['is_active']) {
+            $token = bin2hex(random_bytes(32));
+            $expires = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+            $this->userModel->updateResetToken($user['id'], $token, $expires);
+
+            $resetLink = BASE_URL . '/auth/reset?token=' . $token;
+
+            if ($this->sendEmail($user['email'], $user['name'], $resetLink)) {
+                \set_flash_message('success', 'Đã gửi link đặt lại mật khẩu vào email của bạn.');
+            } else {
+                \set_flash_message('error', 'Không thể gửi email. Vui lòng thử lại sau.');
+            }
+        } else {
+            // Bảo mật: Không thông báo rõ ràng email có tồn tại hay không
+            \set_flash_message('success', 'Nếu email tồn tại, link đặt lại mật khẩu sẽ được gửi.');
+        }
+
+        $this->redirect(BASE_URL . '/auth/forgot');
     }
 
     public function reset()
@@ -148,6 +157,7 @@ class AuthController extends Controller
         if (!$user) {
             \set_flash_message('error', 'Link không hợp lệ hoặc đã hết hạn.');
             $this->redirect(BASE_URL . '/auth/login');
+            return; // ✅ FIX: Thêm return
         }
 
         $this->view('auth/reset', ['token' => $token, 'title' => 'Đặt lại mật khẩu']);
@@ -156,39 +166,43 @@ class AuthController extends Controller
     public function update_password()
     {
         $this->requireGuest();
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $token = $_POST['token'];
-            $password = $_POST['password'];
-            $confirm = $_POST['confirm_password'];
 
-            $user = $this->userModel->findByResetToken($token);
-            if (!$user) {
-                \set_flash_message('error', 'Token không hợp lệ.');
-                $this->redirect(BASE_URL . '/auth/login');
-                return;
-            }
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            $this->redirect(BASE_URL . '/auth/login');
+            return; // ✅ FIX: Thêm return
+        }
 
-            if ($password !== $confirm) {
-                \set_flash_message('error', 'Mật khẩu xác nhận không khớp.');
-                $this->redirect(BASE_URL . '/auth/reset?token=' . $token);
-                return;
-            }
+        $token = $_POST['token'] ?? '';
+        $password = $_POST['password'] ?? '';
+        $confirm = $_POST['confirm_password'] ?? '';
 
-            if (strlen($password) < 6) {
-                \set_flash_message('error', 'Mật khẩu phải từ 6 ký tự.');
-                $this->redirect(BASE_URL . '/auth/reset?token=' . $token);
-                return;
-            }
+        $user = $this->userModel->findByResetToken($token);
+        if (!$user) {
+            \set_flash_message('error', 'Token không hợp lệ.');
+            $this->redirect(BASE_URL . '/auth/login');
+            return;
+        }
 
-            // Cập nhật mật khẩu và xóa token (Logic nằm trong Model)
-            if ($this->userModel->resetPassword($user['id'], $password)) {
-                $this->logModel->create($user['id'], 'password_reset', 'Khôi phục mật khẩu thành công.');
-                \set_flash_message('success', 'Mật khẩu đã được thay đổi. Vui lòng đăng nhập.');
-                $this->redirect(BASE_URL . '/auth/login');
-            } else {
-                \set_flash_message('error', 'Lỗi hệ thống. Vui lòng thử lại.');
-                $this->redirect(BASE_URL . '/auth/reset?token=' . $token);
-            }
+        if ($password !== $confirm) {
+            \set_flash_message('error', 'Mật khẩu xác nhận không khớp.');
+            $this->redirect(BASE_URL . '/auth/reset?token=' . $token);
+            return;
+        }
+
+        if (strlen($password) < 6) {
+            \set_flash_message('error', 'Mật khẩu phải từ 6 ký tự.');
+            $this->redirect(BASE_URL . '/auth/reset?token=' . $token);
+            return;
+        }
+
+        // Cập nhật mật khẩu và xóa token
+        if ($this->userModel->resetPassword($user['id'], $password)) {
+            $this->logModel->create($user['id'], 'password_reset', 'Khôi phục mật khẩu thành công.');
+            \set_flash_message('success', 'Mật khẩu đã được thay đổi. Vui lòng đăng nhập.');
+            $this->redirect(BASE_URL . '/auth/login');
+        } else {
+            \set_flash_message('error', 'Lỗi hệ thống. Vui lòng thử lại.');
+            $this->redirect(BASE_URL . '/auth/reset?token=' . $token);
         }
     }
 
@@ -197,9 +211,11 @@ class AuthController extends Controller
     private function createUserSession($user)
     {
         $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_name'] = $user['name']; // Model mới trả về 'name', không phải 'NAME'
+        $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_role'] = $user['system_role'];
+
+        // ✅ FIX: Tạo CSRF token mới sau khi đăng nhập
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
 
@@ -207,6 +223,8 @@ class AuthController extends Controller
     {
         $mail = new PHPMailer(true);
         try {
+            // Cấu hình Server
+            // $mail->SMTPDebug = 2; // Bỏ comment dòng này nếu muốn xem chi tiết lỗi kết nối (Client/Server)
             $mail->isSMTP();
             $mail->Host       = $_ENV['SMTP_HOST'];
             $mail->SMTPAuth   = true;
@@ -216,16 +234,32 @@ class AuthController extends Controller
             $mail->Port       = $_ENV['SMTP_PORT'];
             $mail->CharSet    = 'UTF-8';
 
+            // Người gửi & Người nhận
             $mail->setFrom($_ENV['SMTP_FROM_EMAIL'], $_ENV['SMTP_FROM_NAME']);
             $mail->addAddress($toEmail, $toName);
 
+            // Nội dung
             $mail->isHTML(true);
             $mail->Subject = 'Đặt lại mật khẩu - CLB Management';
-            $mail->Body    = "Chào $toName,<br><br>Vui lòng click vào link sau để đặt lại mật khẩu:<br><a href='$link'>$link</a><br><br>Link hết hạn sau 15 phút.";
+            $mail->Body    = "
+                <h3>Yêu cầu đặt lại mật khẩu</h3>
+                <p>Chào <b>$toName</b>,</p>
+                <p>Bạn (hoặc ai đó) đã yêu cầu đặt lại mật khẩu cho tài khoản này.</p>
+                <p>Vui lòng nhấn vào link bên dưới để tạo mật khẩu mới:</p>
+                <p><a href='$link' style='background:#4f46e5; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;'>Đặt lại mật khẩu</a></p>
+                <p><i>Link này sẽ hết hạn sau 15 phút.</i></p>
+            ";
 
             $mail->send();
             return true;
         } catch (Exception $e) {
+            // SỬA: In lỗi trực tiếp ra màn hình để debug
+            echo "<div style='background: #fee2e2; color: #991b1b; padding: 20px; margin: 20px; border: 1px solid #f87171;'>";
+            echo "<h3>Lỗi gửi mail:</h3>";
+            echo "<p>" . $mail->ErrorInfo . "</p>";
+            echo "</div>";
+
+            // Ghi log dự phòng
             error_log('Mail Error: ' . $mail->ErrorInfo);
             return false;
         }

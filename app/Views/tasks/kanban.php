@@ -1,4 +1,4 @@
-<?php require_once 'app/Views/layout/header.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/header.php'; ?>
 
 <div class="h-[calc(100vh-140px)] flex flex-col">
     <div class="flex justify-between items-center mb-4 px-4 sm:px-0">
@@ -110,4 +110,4 @@
     });
 </script>
 
-<?php require_once 'app/Views/layout/footer.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/footer.php'; ?>

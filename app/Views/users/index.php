@@ -1,4 +1,4 @@
-<?php require_once 'app/Views/layout/header.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/header.php'; ?>
 
 <div class="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
     <form method="GET" action="<?= BASE_URL ?>/user" class="flex flex-wrap gap-4 items-end">
@@ -136,4 +136,4 @@
     </div>
 </div>
 
-<?php require_once 'app/Views/layout/footer.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/footer.php'; ?>

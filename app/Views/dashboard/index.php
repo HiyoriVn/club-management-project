@@ -1,4 +1,4 @@
-<?php require_once 'app/Views/layout/header.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/header.php'; ?>
 
 <div class="max-w-7xl mx-auto">
     <div class="bg-indigo-600 rounded-lg shadow-lg mb-8 p-6 sm:p-10 text-white relative overflow-hidden">
@@ -157,4 +157,4 @@
     </div>
 </div>
 
-<?php require_once 'app/Views/layout/footer.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/footer.php'; ?>

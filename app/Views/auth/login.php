@@ -1,4 +1,4 @@
-<?php require_once 'app/Views/layout/auth_header.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/auth_header.php'; ?>
 
 <div class="max-w-md w-full space-y-8 glass-card p-10 rounded-2xl shadow-2xl relative z-10 animate-fade-in-up">
     <div class="logo-container mx-auto h-16 w-16 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg transform rotate-3 transition hover:rotate-6">
@@ -10,11 +10,15 @@
             Chào mừng trở lại!
         </h2>
         <p class="mt-2 text-sm text-gray-600">
-            Hệ thống quản lý CLB Hiyorivn
+            Hệ thống quản lý câu lạc bộ
         </p>
     </div>
 
+    <!-- ✅ FIX: Thêm action và method -->
     <form class="mt-8 space-y-6" action="<?= BASE_URL ?>/auth/login" method="POST">
+        <!-- ✅ FIX: Thêm CSRF Token -->
+        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+
         <div class="rounded-md shadow-sm -space-y-px">
             <div>
                 <label for="email" class="sr-only">Email</label>
@@ -23,9 +27,13 @@
                         <ion-icon name="mail-outline" class="text-gray-400 text-lg"></ion-icon>
                     </div>
                     <input id="email" name="email" type="email" autocomplete="email" required
+                        value="<?= htmlspecialchars($email ?? '') ?>"
                         class="appearance-none rounded-none rounded-t-md relative block w-full px-10 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm transition-all duration-300 ease-in-out"
                         placeholder="Địa chỉ Email">
                 </div>
+                <?php if (!empty($email_err)): ?>
+                    <p class="mt-1 text-xs text-red-600"><?= $email_err ?></p>
+                <?php endif; ?>
             </div>
             <div>
                 <label for="password" class="sr-only">Mật khẩu</label>
@@ -37,6 +45,9 @@
                         class="appearance-none rounded-none rounded-b-md relative block w-full px-10 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm transition-all duration-300 ease-in-out"
                         placeholder="Mật khẩu">
                 </div>
+                <?php if (!empty($password_err)): ?>
+                    <p class="mt-1 text-xs text-red-600"><?= $password_err ?></p>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -66,8 +77,7 @@
     </form>
 
     <div class="mt-6 text-center text-xs text-gray-500">
-        &copy; <?= date('Y') ?> Club Management System. Version 2.0
+        &copy; <?= date('Y') ?> Club Management System
     </div>
-</div>
 
-<?php require_once 'app/Views/layout/auth_footer.php'; ?>
+    <?php require_once ROOT_PATH . '/app/Views/layout/auth_footer.php'; ?>

@@ -1,4 +1,4 @@
-<?php require_once 'app/Views/layout/auth_header.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/auth_header.php'; ?>
 
 <div class="max-w-md w-full space-y-8 glass-card p-10 rounded-2xl shadow-2xl relative z-10">
     <div class="text-center">
@@ -41,4 +41,4 @@
     </form>
 </div>
 
-<?php require_once 'app/Views/layout/auth_footer.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/auth_footer.php'; ?>

@@ -1,4 +1,4 @@
-<?php require_once 'app/Views/layout/header.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/header.php'; ?>
 
 <div class="max-w-6xl mx-auto">
     <div class="mb-8">
@@ -36,30 +36,9 @@
                 <p class="text-sm text-gray-500">Thống kê thu chi, ngân sách tồn dư theo tháng/quý.</p>
             </div>
         </a>
-
-        <div class="bg-white rounded-lg shadow p-6 border border-gray-200 hover:border-indigo-500 transition-colors h-full opacity-75">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-purple-100 text-purple-600 rounded-lg">
-                    <ion-icon name="people-outline" class="text-2xl"></ion-icon>
-                </div>
-                <span class="text-xs font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded">Sắp ra mắt</span>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-1">Thống kê Thành viên</h3>
-            <p class="text-sm text-gray-500">Biểu đồ tăng trưởng thành viên và tỷ lệ tham gia.</p>
-        </div>
-
-        <div class="bg-white rounded-lg shadow p-6 border border-gray-200 hover:border-indigo-500 transition-colors h-full opacity-75">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-3 bg-yellow-100 text-yellow-600 rounded-lg">
-                    <ion-icon name="briefcase-outline" class="text-2xl"></ion-icon>
-                </div>
-                <span class="text-xs font-bold bg-gray-100 text-gray-500 px-2 py-1 rounded">Sắp ra mắt</span>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-1">Hiệu suất Dự án</h3>
-            <p class="text-sm text-gray-500">Tiến độ hoàn thành công việc và KPI dự án.</p>
         </div>
 
     </div>
 </div>
 
-<?php require_once 'app/Views/layout/footer.php'; ?>
+<?php require_once ROOT_PATH . '/app/Views/layout/footer.php'; ?>

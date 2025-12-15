@@ -62,7 +62,8 @@ class Controller
     protected function requireGuest()
     {
         if (isset($_SESSION['user_id'])) {
-            header('Location: ' . BASE_URL);
+            // Sửa dòng này: Trỏ thẳng vào dashboard
+            header('Location: ' . BASE_URL . '/dashboard');
             exit;
         }
     }
