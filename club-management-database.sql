@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th12 15, 2025 lúc 10:13 AM
+-- Thời gian đã tạo: Th12 15, 2025 lúc 04:12 PM
 -- Phiên bản máy phục vụ: 10.4.32-MariaDB
 -- Phiên bản PHP: 8.2.12
 
@@ -57,7 +57,20 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `details`, `created_at`)
 (15, 1, 'user_logout', 'Đăng xuất hệ thống.', '2025-12-15 15:47:11'),
 (16, 5, 'user_login', 'Đăng nhập thành công.', '2025-12-15 15:50:12'),
 (17, 5, 'user_logout', 'Đăng xuất hệ thống.', '2025-12-15 15:56:06'),
-(18, 1, 'user_login', 'Đăng nhập thành công.', '2025-12-15 15:56:09');
+(18, 1, 'user_login', 'Đăng nhập thành công.', '2025-12-15 15:56:09'),
+(19, 1, 'user_logout', 'Đăng xuất hệ thống.', '2025-12-15 16:15:04'),
+(20, 1, 'user_login', 'Đăng nhập thành công.', '2025-12-15 21:26:47'),
+(21, 1, 'user_create', 'Tạo thành viên: member@clb.vn', '2025-12-15 21:27:31'),
+(22, 1, 'user_logout', 'Đăng xuất hệ thống.', '2025-12-15 21:28:16'),
+(23, 1, 'user_login', 'Đăng nhập thành công.', '2025-12-15 21:36:11'),
+(24, 1, 'user_create', 'Tạo thành viên: subadmin@clb.vn', '2025-12-15 21:36:41'),
+(25, 1, 'user_delete', 'Xóa user ID: 2', '2025-12-15 21:36:56'),
+(26, 1, 'user_logout', 'Đăng xuất hệ thống.', '2025-12-15 21:38:46'),
+(27, 7, 'user_login', 'Đăng nhập thành công.', '2025-12-15 21:38:55'),
+(28, 7, 'user_logout', 'Đăng xuất hệ thống.', '2025-12-15 21:43:21'),
+(29, 8, 'user_login', 'Đăng nhập thành công.', '2025-12-15 21:43:33'),
+(30, 8, 'user_logout', 'Đăng xuất hệ thống.', '2025-12-15 21:49:07'),
+(31, 1, 'user_login', 'Đăng nhập thành công.', '2025-12-15 21:49:18');
 
 -- --------------------------------------------------------
 
@@ -279,12 +292,14 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `system_role`, `is_active`, `password_reset_token`, `password_reset_expires`, `created_at`, `updated_at`) VALUES
-(1, 'Admin', 'admin@clb.vn', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1, NULL, NULL, '2025-12-12 19:40:42', '2025-12-12 19:40:42'),
-(2, 'hiro', 'hiro9395.gg@gmail.com', '!Hirovn9395', 'admin', 1, NULL, NULL, '2025-12-15 14:56:30', '2025-12-15 14:56:30'),
+(1, 'Admin', 'admin@clb.vn', '$2y$10$SA7/0AdzTfVsCoWZa8Pt9ORXoxHPcclaxYFxntvovcO.YaNL.X.ou', 'admin', 1, '85496826af3f01e0d47b37cd0f9d4d385364f0093f35f34fcf2d760adc0454cc', '2025-12-15 15:49:46', '2025-12-12 19:40:42', '2025-12-15 21:34:46'),
+(2, 'hiro', 'hiro9395.gg@gmail.com', '!Hirovn9395', 'admin', 0, 'ee6eeff4b01af1dbdc6132c6ad7b39dba39739d427e19f0c2e917ca361290205', '2025-12-15 10:30:12', '2025-12-15 14:56:30', '2025-12-15 21:36:56'),
 (3, 'Nguyễn Văn A', 'nguyenvana@clb.edu.vn', '$2y$10$tDoWByYG7Z1wehmw.Qs3q.bAS/I6SBEytqF9JWvYN2B4UQeMX.Ooi', 'subadmin', 1, 'a4b42270f6c91319dd5a5648b68026717a62a59793672624818cf5be87660ee6', '2025-12-15 10:04:01', '2025-12-15 15:37:09', '2025-12-15 15:49:01'),
 (4, 'Nguyễn Văn B', 'nguyenvanb@clb.edu.vn', '$2y$10$gjOsIStXE8TydmnjdNaT6OfCNgGPhk9sxzASwXIgKDX6dNfuqjgEy', 'subadmin', 1, NULL, NULL, '2025-12-15 15:37:33', '2025-12-15 15:37:33'),
 (5, 'Nguyễn Văn C', 'nguyenvanc@clb.edu.vn', '$2y$10$DU0.YgPpjgySStG9DNiEaOzVxk02OUjRhzLCCX7nHjWAJFWGjyADe', 'member', 1, NULL, NULL, '2025-12-15 15:38:00', '2025-12-15 15:38:00'),
-(6, 'Nguyễn Văn D', 'nguyenvand@clb.edu.vn', '$2y$10$CdCtAWeHwMHpO8DbdcMwDexIkTlumVI5gXweNsvNJQEzT9E7r98Tq', 'member', 1, NULL, NULL, '2025-12-15 15:38:19', '2025-12-15 15:38:19');
+(6, 'Nguyễn Văn D', 'nguyenvand@clb.edu.vn', '$2y$10$CdCtAWeHwMHpO8DbdcMwDexIkTlumVI5gXweNsvNJQEzT9E7r98Tq', 'member', 1, NULL, NULL, '2025-12-15 15:38:19', '2025-12-15 15:38:19'),
+(7, 'Member', 'member@clb.vn', '$2y$10$DGl0o91CSIboPeW8sqcUbeLGsI.L2zvKbrIINBRbwXhP0floHEkeG', 'member', 1, NULL, NULL, '2025-12-15 21:27:31', '2025-12-15 21:27:31'),
+(8, 'Subadmin', 'subadmin@clb.vn', '$2y$10$Tbo.hKM9PSeBnRnyiQsxg.cL2kzgtcMRd7CxOuDVkhfetB4iLjuyy', 'subadmin', 1, NULL, NULL, '2025-12-15 21:36:41', '2025-12-15 21:36:41');
 
 -- --------------------------------------------------------
 
@@ -312,7 +327,9 @@ INSERT INTO `user_profiles` (`user_id`, `phone`, `gender`, `dob`, `address`, `bi
 (3, '', 'other', NULL, NULL, NULL, NULL, '2025-12-15 15:37:09'),
 (4, '', 'other', NULL, NULL, NULL, NULL, '2025-12-15 15:37:33'),
 (5, '', 'other', NULL, NULL, NULL, NULL, '2025-12-15 15:38:00'),
-(6, '', 'other', NULL, NULL, NULL, NULL, '2025-12-15 15:38:19');
+(6, '', 'other', NULL, NULL, NULL, NULL, '2025-12-15 15:38:19'),
+(7, '', 'other', NULL, NULL, NULL, NULL, '2025-12-15 21:27:31'),
+(8, '', 'other', NULL, NULL, NULL, NULL, '2025-12-15 21:36:41');
 
 --
 -- Chỉ mục cho các bảng đã đổ
@@ -429,7 +446,7 @@ ALTER TABLE `user_profiles`
 -- AUTO_INCREMENT cho bảng `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT cho bảng `announcements`
@@ -483,7 +500,7 @@ ALTER TABLE `transactions`
 -- AUTO_INCREMENT cho bảng `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- Các ràng buộc cho các bảng đã đổ

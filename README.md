@@ -29,7 +29,7 @@ Mở **Terminal** (hoặc Git Bash/CMD) tại thư mục `htdocs` của XAMPP (t
 1.  Mở **XAMPP Control Panel**, bật **Apache** và **MySQL**.
 2.  Truy cập **phpMyAdmin**: [http://localhost/phpmyadmin](http://localhost/phpmyadmin)
 3.  Bấm vào tab **Import (Nhập)**. 
-4.  Chọn file `migrations/club_management_database_upload.sql` trong thư mục code và bấm **Import** để nạp cấu trúc bảng và dữ liệu mẫu.
+4.  Chọn file `migrations/init.sql` trong thư mục code và bấm **Import** để nạp cấu trúc bảng và dữ liệu mẫu.
 
 ### Bước 3: Cài đặt thư viện (Composer)
 1.  Mở Terminal (hoặc CMD/Git Bash) tại thư mục gốc của dự án.
