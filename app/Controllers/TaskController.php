@@ -25,6 +25,17 @@ class TaskController extends Controller
         $this->logModel = new ActivityLog();
     }
 
+    public function index()
+    {
+        // Điều hướng từ nút "Công việc" (/task?project_id=1) sang Kanban
+        if (isset($_GET['project_id']) && !empty($_GET['project_id'])) {
+            $this->redirect(BASE_URL . '/task/kanban/' . $_GET['project_id']);
+        } else {
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Vui lòng chọn dự án.');
+            $this->redirect(BASE_URL . '/project');
+        }
+    }
+
     /**
      * Hiển thị Kanban Board
      */
@@ -33,14 +44,12 @@ class TaskController extends Controller
         $project = $this->projectModel->findById($projectId);
 
         if (!$project) {
-            \set_flash_message('error', 'Dự án không tồn tại.');
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Dự án không tồn tại.');
             $this->redirect(BASE_URL . '/project');
         }
 
-        // Lấy tasks
         $tasks = $this->taskModel->getTasksByProject($projectId);
 
-        // Group tasks by status cho dễ hiển thị ở View
         $kanbanTasks = [
             'backlog' => [],
             'todo' => [],
@@ -50,7 +59,13 @@ class TaskController extends Controller
 
         foreach ($tasks as $task) {
             $task['assignees'] = $this->taskModel->getAssignees($task['id']);
-            $kanbanTasks[$task['status']][] = $task;
+
+            // Xử lý status nếu tên trong DB khác tên key mảng
+            $status = $task['status'];
+            if ($status == 'completed') $status = 'done';
+            if (!isset($kanbanTasks[$status])) $status = 'backlog'; // Fallback
+
+            $kanbanTasks[$status][] = $task;
         }
 
         $data = [
@@ -76,7 +91,6 @@ class TaskController extends Controller
 
         $tasks = $this->taskModel->getTasksByProject($projectId);
 
-        // Lấy thêm assignees cho mỗi task
         foreach ($tasks as &$task) {
             $task['assignees'] = $this->taskModel->getAssignees($task['id']);
         }
@@ -137,7 +151,7 @@ class TaskController extends Controller
             }
         } else {
             // Hiển thị form
-            $projectMembers = $this->projectModel->getMembers($projectId);
+            $projectMembers = $this->projectModel->getProjectMembers($projectId);
 
             $data = [
                 'project' => $project,
@@ -171,18 +185,16 @@ class TaskController extends Controller
 
             $this->taskModel->update($id, $updateData);
 
-            // Cập nhật Assignees (Xóa cũ thêm mới đơn giản)
-            // Lưu ý: Logic này hơi thô, có thể tối ưu sau
             $currentAssignees = array_column($this->taskModel->getAssignees($id), 'id');
             $newAssignees = $_POST['assignees'] ?? [];
 
-            // Remove unselected
+
             foreach ($currentAssignees as $uid) {
                 if (!in_array($uid, $newAssignees)) {
                     $this->taskModel->unassign($id, $uid);
                 }
             }
-            // Add new
+
             foreach ($newAssignees as $uid) {
                 if (!in_array($uid, $currentAssignees)) {
                     $this->taskModel->assign($id, $uid);
@@ -194,7 +206,7 @@ class TaskController extends Controller
 
             $this->redirect(BASE_URL . '/task/kanban/' . $task['project_id']);
         } else {
-            $projectMembers = $this->projectModel->getMembers($task['project_id']);
+            $projectMembers = $this->projectModel->getProjectMembers($task['project_id']);
             $currentAssignees = $this->taskModel->getAssignees($id);
             $assigneeIds = array_column($currentAssignees, 'id');
 
@@ -221,7 +233,6 @@ class TaskController extends Controller
             return;
         }
 
-        // Lấy raw input (vì fetch api gửi json)
         $input = json_decode(file_get_contents('php://input'), true);
         $status = $input['status'] ?? null;
 

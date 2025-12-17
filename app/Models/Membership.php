@@ -13,15 +13,8 @@ class Membership
         $this->db = Database::getInstance();
     }
 
-    /**
-     * Thêm thành viên vào ban
-     * @param int $userId
-     * @param int $departmentId
-     * @param string $role ('Head', 'Deputy', 'Member')
-     */
     public function addMember($userId, $departmentId, $role = 'Member')
     {
-        // Kiểm tra xem đã tồn tại chưa (tránh lỗi duplicate key)
         if ($this->checkMembership($userId, $departmentId)) {
             return false;
         }
@@ -36,9 +29,6 @@ class Membership
         return $this->db->execute();
     }
 
-    /**
-     * Cập nhật vai trò thành viên trong ban
-     */
     public function updateRole($membershipId, $newRole)
     {
         $allowedRoles = ['Head', 'Deputy', 'Member'];
@@ -53,9 +43,6 @@ class Membership
         return $this->db->execute();
     }
 
-    /**
-     * Xóa thành viên khỏi ban
-     */
     public function removeMember($membershipId)
     {
         $this->db->query("DELETE FROM memberships WHERE id = :id");
@@ -63,14 +50,11 @@ class Membership
         return $this->db->execute();
     }
 
-    /**
-     * Lấy danh sách thành viên của một ban
-     * (Kèm thông tin user)
-     */
     public function getMembersByDepartment($departmentId)
     {
+        // SỬA: Đổi 'u.name as user_name' thành 'u.name'
         $sql = "SELECT m.id as membership_id, m.department_role, m.user_id,
-                       u.name as user_name, u.email, u.system_role
+                       u.name, u.email, u.system_role
                 FROM memberships m
                 JOIN users u ON m.user_id = u.id
                 WHERE m.department_id = :dept_id
@@ -82,9 +66,6 @@ class Membership
         return $this->db->resultSet();
     }
 
-    /**
-     * Lấy các ban mà user tham gia
-     */
     public function getDepartmentsByUser($userId)
     {
         $sql = "SELECT m.id as membership_id, m.department_role, 
@@ -99,9 +80,6 @@ class Membership
         return $this->db->resultSet();
     }
 
-    /**
-     * Kiểm tra user có trong ban chưa
-     */
     public function checkMembership($userId, $departmentId)
     {
         $this->db->query("SELECT id FROM memberships WHERE user_id = :uid AND department_id = :did");
@@ -112,9 +90,6 @@ class Membership
         return $this->db->rowCount() > 0;
     }
 
-    /**
-     * Tìm membership theo ID
-     */
     public function findById($id)
     {
         $this->db->query("SELECT * FROM memberships WHERE id = :id");

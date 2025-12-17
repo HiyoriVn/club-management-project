@@ -18,131 +18,109 @@ class ProjectController extends Controller
     public function __construct()
     {
         $this->requireLogin();
-
         $this->projectModel = new Project();
         $this->userModel = new User();
-        $this->deptModel = new Department(); // Để chọn ban phụ trách nếu cần
+        $this->deptModel = new Department();
         $this->logModel = new ActivityLog();
     }
 
-    /**
-     * Danh sách dự án / sự kiện
-     */
+    // 1. DANH SÁCH DỰ ÁN
     public function index()
     {
-        // Filter type: 'project' (default) hoặc 'event' hoặc 'all'
-        $type = $_GET['type'] ?? 'project';
-        $status = $_GET['status'] ?? null;
+        $projects = $this->projectModel->getAll();
 
-        if ($type === 'event') {
-            $dataList = $this->projectModel->getAllEvents(50, $status);
-            $title = 'Danh sách Sự kiện';
-        } elseif ($type === 'project') {
-            $dataList = $this->projectModel->getAllProjects(50, $status);
-            $title = 'Danh sách Dự án';
-        } else {
-            // Nếu muốn lấy cả 2, cần custom method trong Model hoặc merge
-            // Tạm thời default về project nếu param sai
-            $dataList = $this->projectModel->getAllProjects(50, $status);
-            $title = 'Danh sách Dự án';
-        }
-
-        $data = [
-            'projects' => $dataList,
-            'current_type' => $type,
-            'current_status' => $status,
-            'title' => $title
-        ];
-
-        $this->view('projects/index', $data);
+        $this->view('projects/index', [
+            'projects' => $projects,
+            'title' => 'Danh sách Dự án'
+        ]);
     }
-
-    /**
-     * Chi tiết dự án/sự kiện
-     */
+    // 2. CHI TIẾT DỰ ÁN
     public function detail($id)
     {
         $project = $this->projectModel->findById($id);
+
         if (!$project) {
-            \set_flash_message('error', 'Dữ liệu không tồn tại.');
             $this->redirect(BASE_URL . '/project');
         }
 
-        $members = $this->projectModel->getMembers($id);
+        $members = $this->projectModel->getProjectMembers($id);
+        $tasks = $this->projectModel->getTasks($id); // Lấy cả task xong và chưa xong
 
-        $data = [
+        // Kiểm tra xem User hiện tại có phải là thành viên dự án không
+        $isMember = in_array($_SESSION['user_role'], ['admin', 'subadmin']) || $this->projectModel->isMember($id, $_SESSION['user_id']);
+
+        // Admin hệ thống luôn có quyền như thành viên
+        if (in_array($_SESSION['user_role'], ['admin', 'subadmin'])) {
+            $isMember = true;
+        }
+
+        $this->view('projects/view', [
             'project' => $project,
             'members' => $members,
+            'tasks' => $tasks,
+            'is_member' => $isMember, // Biến này dùng để ẩn/hiện nút "Vào làm việc"
             'title' => $project['name']
-        ];
-
-        // Load view 'projects/view.php'
-        $this->view('projects/view', $data);
+        ]);
     }
 
-    /**
-     * Tạo mới
-     */
+    // 3. TẠO DỰ ÁN (Chỉ Admin/Subadmin)
     public function create()
     {
+        // 1. Check quyền: Chỉ Admin/Subadmin mới được vào
+        if (in_array($_SESSION['user_role'], ['member'])) {
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Bạn không có quyền tạo dự án.');
+            $this->redirect(BASE_URL . '/project');
+        }
+
+        // 2. Xử lý khi Submit form
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $data = [
                 'name' => trim($_POST['name']),
                 'description' => $_POST['description'],
-                'type' => $_POST['type'] ?? 'project', // Quan trọng
-                'status' => $_POST['status'] ?? 'planning',
+                'type' => $_POST['type'],
                 'start_date' => $_POST['start_date'],
                 'end_date' => $_POST['end_date'],
-                'leader_id' => $_POST['leader_id'] ?? null,
-                'department_id' => $_POST['department_id'] ?? null
+                'status' => 'planning',
+                'leader_id' => !empty($_POST['leader_id']) ? $_POST['leader_id'] : null,
+                'department_id' => !empty($_POST['department_id']) ? $_POST['department_id'] : null
             ];
 
-            if (empty($data['name'])) {
-                \set_flash_message('error', 'Tên không được để trống.');
-                $this->redirect(BASE_URL . '/project/create?type=' . $data['type']);
-            }
+            // Gọi Model để tạo dự án
+            $newId = $this->projectModel->create($data);
 
-            $id = $this->projectModel->create($data);
-            if ($id) {
-                // Tự động add người tạo làm thành viên (hoặc Leader)
-                $this->projectModel->addMember($id, $_SESSION['user_id'], 'Member');
-
-                $this->logModel->create($_SESSION['user_id'], 'project_create', "Tạo " . $data['type'] . ": " . $data['name']);
-                \set_flash_message('success', 'Tạo thành công.');
-                $this->redirect(BASE_URL . '/project/index?type=' . $data['type']);
+            if ($newId) {
+                if (function_exists('set_flash_message')) \set_flash_message('success', 'Tạo dự án thành công.');
+                $this->redirect(BASE_URL . '/project');
             } else {
-                \set_flash_message('error', 'Lỗi hệ thống.');
-                $this->redirect(BASE_URL . '/project/create');
+                if (function_exists('set_flash_message')) \set_flash_message('error', 'Lỗi hệ thống.');
             }
-        } else {
-            // Chuẩn bị data cho form
-            $users = $this->userModel->getAllUsers(); // Cho dropdown chọn Leader
-            $depts = $this->deptModel->getAll();      // Cho dropdown chọn Ban
-            $type = $_GET['type'] ?? 'project';
-
-            $data = [
-                'users' => $users['users'] ?? [], // getAllUsers trả về array có key 'users'
-                'departments' => $depts,
-                'type' => $type,
-                'title' => 'Tạo ' . ($type == 'event' ? 'Sự kiện' : 'Dự án') . ' mới'
-            ];
-
-            $this->view('projects/create', $data);
         }
+
+        // 3. Chuẩn bị dữ liệu cho View (SỬA Ở ĐÂY)
+        // Lấy danh sách Leader (Chỉ Admin/Subadmin)
+        $leaders = $this->userModel->getLeadersOnly();
+
+        // Lấy danh sách Ban
+        $depts = $this->deptModel->getAll();
+
+        // Truyền biến $leaders sang View
+        $this->view('projects/create', [
+            'leaders' => $leaders,
+            'departments' => $depts,
+            'title' => 'Tạo Dự án mới'
+        ]);
     }
 
-    /**
-     * Chỉnh sửa
-     */
+    // 4. CHỈNH SỬA DỰ ÁN
     public function edit($id)
     {
         $project = $this->projectModel->findById($id);
-        if (!$project) {
-            $this->redirect(BASE_URL . '/project');
-        }
+        if (!$project) $this->redirect(BASE_URL . '/project');
 
-        // Check quyền: Chỉ Admin hoặc Leader mới được sửa (Logic mở rộng sau)
-        // Hiện tại cho phép login user sửa
+        if (!in_array($_SESSION['user_role'], ['admin', 'subadmin']) && $_SESSION['user_id'] != $project['leader_id']) {
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Bạn không có quyền sửa dự án này.');
+            $this->redirect(BASE_URL . '/project/detail/' . $id);
+        }
 
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $data = [
@@ -151,95 +129,105 @@ class ProjectController extends Controller
                 'status' => $_POST['status'],
                 'start_date' => $_POST['start_date'],
                 'end_date' => $_POST['end_date'],
-                'leader_id' => $_POST['leader_id'],
-                'department_id' => $_POST['department_id']
+                'leader_id' => !empty($_POST['leader_id']) ? $_POST['leader_id'] : null,
+                'department_id' => !empty($_POST['department_id']) ? $_POST['department_id'] : null
             ];
 
             if ($this->projectModel->update($id, $data)) {
-                $this->logModel->create($_SESSION['user_id'], 'project_update', "Cập nhật ID: $id");
-                \set_flash_message('success', 'Cập nhật thành công.');
-                $this->redirect(BASE_URL . '/project/view/' . $id);
-            } else {
-                \set_flash_message('error', 'Lỗi cập nhật.');
-                $this->redirect(BASE_URL . '/project/edit/' . $id);
-            }
-        } else {
-            $users = $this->userModel->getAllUsers();
-            $depts = $this->deptModel->getAll();
+                // Nếu đổi Leader, đảm bảo Leader mới có trong nhóm
+                if (!empty($data['leader_id'])) {
+                    $this->projectModel->addMember($id, $data['leader_id'], 'Leader');
+                }
 
-            $data = [
-                'project' => $project,
-                'users' => $users['users'] ?? [],
-                'departments' => $depts,
-                'title' => 'Chỉnh sửa: ' . $project['name']
-            ];
-            $this->view('projects/edit', $data);
+                $this->logModel->create($_SESSION['user_id'], 'project_update', "Cập nhật dự án ID: $id");
+                if (function_exists('set_flash_message')) \set_flash_message('success', 'Cập nhật thành công.');
+                $this->redirect(BASE_URL . '/project/detail/' . $id);
+            } else {
+                if (function_exists('set_flash_message')) \set_flash_message('error', 'Lỗi cập nhật.');
+            }
         }
+
+        $usersData = $this->userModel->getAllUsers();
+        $users = isset($usersData['users']) ? $usersData['users'] : $usersData;
+        $depts = $this->deptModel->getAll();
+
+        $this->view('projects/edit', [
+            'project' => $project,
+            'users' => $users,
+            'departments' => $depts,
+            'title' => 'Sửa dự án: ' . $project['name']
+        ]);
     }
 
-    /**
-     * Quản lý thành viên (Thêm/Xóa)
-     */
+    // 5. QUẢN LÝ THÀNH VIÊN DỰ ÁN
     public function members($id)
     {
         $project = $this->projectModel->findById($id);
         if (!$project) $this->redirect(BASE_URL . '/project');
 
+        // Quyền: Admin, Subadmin HOẶC Leader
+        $canManage = in_array($_SESSION['user_role'], ['admin', 'subadmin']) || $_SESSION['user_id'] == $project['leader_id'];
+
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Action: add hoặc remove
-            $action = $_POST['action'] ?? '';
-            $userId = $_POST['user_id'] ?? 0;
-            $role = $_POST['role'] ?? 'Member';
+            if (!$canManage) {
+                if (function_exists('set_flash_message')) \set_flash_message('error', 'Bạn không có quyền quản lý thành viên.');
+                $this->redirect(BASE_URL . '/project/detail/' . $id);
+            }
+
+            $action = $_POST['action'];
+            $userId = $_POST['user_id'];
 
             if ($action == 'add') {
+                $role = $_POST['role'] ?? 'Member';
                 if ($this->projectModel->addMember($id, $userId, $role)) {
-                    \set_flash_message('success', 'Đã thêm thành viên.');
+                    if (function_exists('set_flash_message')) \set_flash_message('success', 'Đã thêm thành viên.');
                 } else {
-                    \set_flash_message('error', 'Thành viên đã tồn tại hoặc lỗi.');
+                    if (function_exists('set_flash_message')) \set_flash_message('error', 'Thành viên đã tồn tại.');
                 }
             } elseif ($action == 'remove') {
                 $this->projectModel->removeMember($id, $userId);
-                \set_flash_message('success', 'Đã xóa thành viên.');
+                if (function_exists('set_flash_message')) \set_flash_message('success', 'Đã xóa thành viên khỏi dự án.');
             }
 
             $this->redirect(BASE_URL . '/project/members/' . $id);
-        } else {
-            $currentMembers = $this->projectModel->getMembers($id);
-            $allUsers = $this->userModel->getAllUsers();
-
-            // Lọc ra những user chưa tham gia để hiển thị trong dropdown thêm mới
-            $memberIds = array_column($currentMembers, 'user_id');
-            $availableUsers = array_filter($allUsers['users'], function ($u) use ($memberIds) {
-                return !in_array($u['id'], $memberIds);
-            });
-
-            $data = [
-                'project' => $project,
-                'members' => $currentMembers,
-                'available_users' => $availableUsers,
-                'title' => 'Thành viên: ' . $project['name']
-            ];
-            $this->view('projects/members', $data);
         }
+
+        // Lấy danh sách thành viên hiện tại
+        $currentMembers = $this->projectModel->getProjectMembers($id);
+
+        // Lấy danh sách user để chọn thêm mới (trừ những người đã tham gia)
+        $usersData = $this->userModel->getAllUsers();
+        $allUsers = isset($usersData['users']) ? $usersData['users'] : $usersData;
+
+        $currentIds = array_column($currentMembers, 'user_id');
+        $availableUsers = array_filter($allUsers, function ($u) use ($currentIds) {
+            return !in_array($u['id'], $currentIds);
+        });
+
+        $this->view('projects/members', [
+            'project' => $project,
+            'members' => $currentMembers,
+            'available_users' => $availableUsers,
+            'can_manage' => $canManage, // Truyền biến này xuống view để ẩn/hiện nút xóa
+            'title' => 'Thành viên: ' . $project['name']
+        ]);
     }
 
-    /**
-     * Xóa dự án (Admin only)
-     */
+    // 6. XÓA DỰ ÁN
     public function delete($id)
     {
-        if ($_SESSION['user_role'] !== 'admin') {
-            \set_flash_message('error', 'Bạn không có quyền xóa dự án.');
+        if (!in_array($_SESSION['user_role'], ['admin', 'subadmin'])) {
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Bạn không có quyền xóa dự án.');
             $this->redirect(BASE_URL . '/project');
         }
 
-        $project = $this->projectModel->findById($id);
-        if ($project && $this->projectModel->delete($id)) {
-            $this->logModel->create($_SESSION['user_id'], 'project_delete', "Xóa project ID: $id");
-            \set_flash_message('success', 'Đã xóa dự án.');
+        if ($this->projectModel->delete($id)) {
+            $this->logModel->create($_SESSION['user_id'], 'project_delete', "Xóa dự án ID: $id");
+            if (function_exists('set_flash_message')) \set_flash_message('success', 'Đã xóa dự án.');
         } else {
-            \set_flash_message('error', 'Xóa thất bại.');
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Lỗi khi xóa.');
         }
+
         $this->redirect(BASE_URL . '/project');
     }
 }

@@ -58,7 +58,7 @@
                         </div>
 
                         <h3 class="text-xl font-bold text-gray-900 mb-2 hover:text-indigo-600 transition-colors">
-                            <a href="<?= BASE_URL ?>/announcement/view/<?= $news['id'] ?>">
+                            <a href="<?= BASE_URL ?>/announcement/show/<?= $news['id'] ?>">
                                 <?= htmlspecialchars($news['title']) ?>
                             </a>
                         </h3>
@@ -72,9 +72,9 @@
                                 <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
                                     <?= strtoupper(substr($news['author_name'] ?? 'A', 0, 2)) ?>
                                 </div>
-                                <span class="ml-2 text-sm font-medium text-gray-700"><?= htmlspecialchars($news['author_name'] ?? 'Admin') ?></span>
+                                <span class="ml-2 text-sm font-medium text-gray-700"><?= htmlspecialchars($news['poster_name'] ?? 'Admin') ?></span>
                             </div>
-                            <a href="<?= BASE_URL ?>/announcement/view/<?= $news['id'] ?>" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                            <a href="<?= BASE_URL ?>/announcement/show/<?= $news['id'] ?>" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
                                 Đọc tiếp <span aria-hidden="true">&rarr;</span>
                             </a>
                         </div>

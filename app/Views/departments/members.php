@@ -45,7 +45,7 @@
                                     <?php if ($_SESSION['user_role'] == 'admin'): ?>
                                         <form action="<?= BASE_URL ?>/department/members/<?= $department['id'] ?>" method="POST" class="inline-block">
                                             <input type="hidden" name="action" value="update_role">
-                                            <input type="hidden" name="user_id" value="<?= $mem['user_id'] ?>">
+                                            <input type="hidden" name="membership_id" value="<?= $mem['membership_id'] ?>">
                                             <select name="role" onchange="this.form.submit()" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
                                                 <option value="Member" <?= $mem['department_role'] == 'Member' ? 'selected' : '' ?>>Member</option>
                                                 <option value="Deputy" <?= $mem['department_role'] == 'Deputy' ? 'selected' : '' ?>>Phó ban</option>
@@ -55,7 +55,7 @@
 
                                         <form action="<?= BASE_URL ?>/department/members/<?= $department['id'] ?>" method="POST" class="inline-block" onsubmit="return confirm('Xóa thành viên này khỏi ban?');">
                                             <input type="hidden" name="action" value="remove">
-                                            <input type="hidden" name="user_id" value="<?= $mem['user_id'] ?>">
+                                            <input type="hidden" name="membership_id" value="<?= $mem['membership_id'] ?>">
                                             <button type="submit" class="text-red-600 hover:text-red-900 ml-2">
                                                 <ion-icon name="close-circle-outline" class="text-xl"></ion-icon>
                                             </button>

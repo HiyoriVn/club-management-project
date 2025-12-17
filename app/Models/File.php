@@ -13,61 +13,47 @@ class File
         $this->db = Database::getInstance();
     }
 
-    /**
-     * Lấy danh sách file (có thể lọc theo Project hoặc Ban)
-     */
-    public function getAll($projectId = null, $departmentId = null)
+    public function getAll($filters = [])
     {
-        $sql = "SELECT f.*, u.name as uploader_name 
+        // Sửa query: Lấy f.type
+        $sql = "SELECT f.*, u.name as uploader_name, d.name as department_name, p.name as project_name 
                 FROM files f
                 LEFT JOIN users u ON f.uploaded_by = u.id
+                LEFT JOIN departments d ON f.department_id = d.id
+                LEFT JOIN projects p ON f.project_id = p.id
                 WHERE 1=1";
 
-        if ($projectId) {
-            $sql .= " AND f.project_id = :pid";
-        }
-        if ($departmentId) {
-            $sql .= " AND f.department_id = :did";
+        if (!empty($filters['department_id'])) {
+            $sql .= " AND f.department_id = :dept_id";
         }
 
         $sql .= " ORDER BY f.uploaded_at DESC";
 
         $this->db->query($sql);
-        if ($projectId) $this->db->bind(':pid', $projectId);
-        if ($departmentId) $this->db->bind(':did', $departmentId);
+
+        if (!empty($filters['department_id'])) {
+            $this->db->bind(':dept_id', $filters['department_id']);
+        }
 
         return $this->db->resultSet();
     }
 
     public function create($data)
     {
-        $sql = "INSERT INTO files (file_name, file_path, type, uploaded_by, project_id, department_id) 
-                VALUES (:name, :path, :type, :uid, :pid, :did)";
+        // SỬA: Đổi 'file_type' -> 'type' và XÓA 'file_size'
+        $sql = "INSERT INTO files (file_name, file_path, type, uploaded_by, department_id, project_id) 
+                VALUES (:name, :path, :type, :uploaded_by, :dept_id, :project_id)";
 
         $this->db->query($sql);
 
         $this->db->bind(':name', $data['file_name']);
         $this->db->bind(':path', $data['file_path']);
-        $this->db->bind(':type', $data['type'] ?? null);
-        $this->db->bind(':uid', $data['uploaded_by']);
-        $this->db->bind(':pid', !empty($data['project_id']) ? $data['project_id'] : null);
-        $this->db->bind(':did', !empty($data['department_id']) ? $data['department_id'] : null);
+        $this->db->bind(':type', $data['type']); // Khớp với tên cột trong DB
+        $this->db->bind(':uploaded_by', $data['uploaded_by']);
+        $this->db->bind(':dept_id', !empty($data['department_id']) ? $data['department_id'] : null);
+        $this->db->bind(':project_id', !empty($data['project_id']) ? $data['project_id'] : null);
 
         return $this->db->execute();
-    }
-
-    public function delete($id)
-    {
-        // Lấy thông tin file để xóa file vật lý ở Controller
-        $file = $this->findById($id);
-        if ($file) {
-            $this->db->query("DELETE FROM files WHERE id = :id");
-            $this->db->bind(':id', $id);
-            if ($this->db->execute()) {
-                return $file; // Trả về thông tin file đã xóa
-            }
-        }
-        return false;
     }
 
     public function findById($id)
@@ -75,5 +61,12 @@ class File
         $this->db->query("SELECT * FROM files WHERE id = :id");
         $this->db->bind(':id', $id);
         return $this->db->single();
+    }
+
+    public function delete($id)
+    {
+        $this->db->query("DELETE FROM files WHERE id = :id");
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
     }
 }

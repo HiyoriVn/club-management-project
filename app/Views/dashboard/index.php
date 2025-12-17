@@ -9,7 +9,7 @@
                 <a href="<?= BASE_URL ?>/project" class="bg-white text-indigo-600 px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition">
                     Xem Dự án
                 </a>
-                <a href="<?= BASE_URL ?>/announcement" class="bg-indigo-500 bg-opacity-50 text-white px-4 py-2 rounded-md font-medium hover:bg-opacity-75 transition">
+                <a href="<?= BASE_URL ?>/announcement" class="bg-white text-indigo-600 px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition">
                     Đọc Thông báo
                 </a>
             </div>
@@ -40,7 +40,7 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Dự án đang chạy</dt>
-                        <dd class="text-2xl font-bold text-gray-900"><?= $active_projects ?? 0 ?></dd>
+                        <dd class="text-2xl font-bold text-gray-900"><?= $total_projects ?? 0 ?></dd>
                     </dl>
                 </div>
             </div>
@@ -59,7 +59,7 @@
                 </div>
             </div>
         </div>
-
+    <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'subadmin'])): ?>        
         <div class="bg-white rounded-lg shadow p-5 border-l-4 border-purple-500">
             <div class="flex items-center">
                 <div class="flex-shrink-0">
@@ -67,12 +67,13 @@
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Quỹ CLB (Ước tính)</dt>
-                        <dd class="text-lg font-bold text-gray-900"><?= number_format($budget_balance ?? 0) ?> đ</dd>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Quỹ CLB</dt>
+                        <dd class="text-2xl font-bold text-gray-900"><?= number_format($balance ?? 0) ?> đ</dd>
                     </dl>
                 </div>
             </div>
         </div>
+    <?php endif; ?>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -85,10 +86,10 @@
                     <a href="<?= BASE_URL ?>/project" class="text-sm text-indigo-600 hover:text-indigo-800">Đi tới Dự án &rarr;</a>
                 </div>
                 <div class="divide-y divide-gray-200">
-                    <?php if (empty($my_recent_tasks)): ?>
+                    <?php if (empty($my_tasks)): ?>
                         <div class="p-6 text-center text-gray-500">Bạn không có công việc nào cần làm ngay. Tuyệt vời!</div>
                     <?php else: ?>
-                        <?php foreach ($my_recent_tasks as $task): ?>
+                        <?php foreach ($my_tasks as $task): ?>
                             <div class="p-4 hover:bg-gray-50 flex items-center justify-between">
                                 <div class="flex items-center">
                                     <div class="mr-3">
@@ -117,13 +118,13 @@
                     <h3 class="text-lg font-bold text-gray-900">Thông báo mới</h3>
                 </div>
                 <div class="p-4">
-                    <?php if (empty($recent_announcements)): ?>
+                    <?php if (empty($announcements)): ?>
                         <p class="text-gray-500 text-sm">Không có thông báo mới.</p>
                     <?php else: ?>
                         <ul class="space-y-4">
-                            <?php foreach ($recent_announcements as $news): ?>
+                            <?php foreach ($announcements as $news): ?>
                                 <li>
-                                    <a href="<?= BASE_URL ?>/announcement/view/<?= $news['id'] ?>" class="group block">
+                                    <a href="<?= BASE_URL ?>/announcement/show/<?= $news['id'] ?>" class="group block">
                                         <h4 class="text-sm font-bold text-gray-800 group-hover:text-indigo-600 transition">
                                             <?= htmlspecialchars($news['title']) ?>
                                         </h4>
@@ -138,21 +139,6 @@
                     <a href="<?= BASE_URL ?>/announcement" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Xem tất cả</a>
                 </div>
             </div>
-
-            <div class="bg-white shadow rounded-lg p-4">
-                <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Phím tắt</h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <a href="<?= BASE_URL ?>/project/create" class="flex flex-col items-center justify-center p-3 border rounded hover:bg-gray-50 text-center">
-                        <ion-icon name="add-circle" class="text-2xl text-green-500 mb-1"></ion-icon>
-                        <span class="text-xs text-gray-700">Tạo Dự án</span>
-                    </a>
-                    <a href="<?= BASE_URL ?>/file" class="flex flex-col items-center justify-center p-3 border rounded hover:bg-gray-50 text-center">
-                        <ion-icon name="cloud-upload" class="text-2xl text-blue-500 mb-1"></ion-icon>
-                        <span class="text-xs text-gray-700">Upload File</span>
-                    </a>
-                </div>
-            </div>
-
         </div>
     </div>
 </div>

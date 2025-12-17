@@ -112,7 +112,6 @@ $unread_notifications_count = 0;
                         <ion-icon name="folder-outline" class="mr-3 h-5 w-5"></ion-icon>
                         Tài liệu
                     </a>
-
                     <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin', 'subadmin'])): ?>
                         <div class="pt-6">
                             <p class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -130,12 +129,18 @@ $unread_notifications_count = 0;
                                 <ion-icon name="people-outline" class="mr-3 h-5 w-5"></ion-icon>
                                 Quản lý Người dùng
                             </a>
-
-                            <a href="<?php echo BASE_URL; ?>/report"
-                                class="<?php echo isActive('/report'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-                                <ion-icon name="stats-chart-outline" class="mr-3 h-5 w-5"></ion-icon>
-                                Báo cáo & Thống kê
+                            <a href="<?php echo BASE_URL; ?>/transaction"
+                                class="<?php echo isActive('/transaction'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                                <ion-icon name="wallet-outline" class="mr-3 h-5 w-5"></ion-icon>
+                                Quản lý Tài chính
                             </a>
+                            <?php if (isset($_SESSION['user_role']) && in_array($_SESSION['user_role'], ['admin'])): ?>
+                                <a href="<?php echo BASE_URL; ?>/report"
+                                    class="<?php echo isActive('/report'); ?> group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
+                                    <ion-icon name="stats-chart-outline" class="mr-3 h-5 w-5"></ion-icon>
+                                    Báo cáo & Thống kê
+                                </a>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </nav>

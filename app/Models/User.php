@@ -64,7 +64,7 @@ class User
             return false;
         }
     }
-
+    
     /**
      * Lấy thông tin chi tiết User (Join users + user_profiles)
      */
@@ -280,5 +280,14 @@ class User
             'limit' => $limit,
             'total_pages' => ceil($total / $limit)
         ];
+    }
+    public function getLeadersOnly()
+    {
+        $sql = "SELECT id, name, email, system_role 
+                FROM users 
+                WHERE system_role IN ('admin', 'subadmin') 
+                ORDER BY name ASC";
+        $this->db->query($sql);
+        return $this->db->resultSet();
     }
 }

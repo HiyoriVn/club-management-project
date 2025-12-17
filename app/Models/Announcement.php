@@ -14,7 +14,7 @@ class Announcement
     }
 
     /**
-     * Lấy thông báo (Admin xem hết, Member chỉ xem thông báo chung hoặc của ban mình)
+     * Lấy thông báo 
      */
     public function getForUser($userId = null, $departmentIds = [])
     {
@@ -84,7 +84,14 @@ class Announcement
 
     public function findById($id)
     {
-        $this->db->query("SELECT * FROM announcements WHERE id = :id");
+        // Sử dụng LEFT JOIN để lấy tên người dùng và tên ban
+        $sql = "SELECT a.*, u.name as author_name, d.name as department_name 
+            FROM announcements a
+            LEFT JOIN users u ON a.posted_by = u.id
+            LEFT JOIN departments d ON a.target_department_id = d.id
+            WHERE a.id = :id";
+
+        $this->db->query($sql);
         $this->db->bind(':id', $id);
         return $this->db->single();
     }

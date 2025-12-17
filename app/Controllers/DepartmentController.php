@@ -27,10 +27,8 @@ class DepartmentController extends Controller
     public function index()
     {
         $departments = $this->deptModel->getAll();
-        // Lấy thống kê số lượng thành viên
         $counts = $this->deptModel->getMemberCounts();
 
-        // Merge count vào departments
         $countMap = [];
         foreach ($counts as $c) $countMap[$c['id']] = $c['member_count'];
 
@@ -96,15 +94,11 @@ class DepartmentController extends Controller
         $this->redirect(BASE_URL . '/department');
     }
 
-    /**
-     * Quản lý thành viên trong ban
-     */
     public function members($id)
     {
         $dept = $this->deptModel->findById($id);
         if (!$dept) $this->redirect(BASE_URL . '/department');
 
-        // Xử lý thêm/xóa thành viên
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if ($_SESSION['user_role'] !== 'admin') {
                 \set_flash_message('error', 'Chỉ Admin mới được điều chỉnh nhân sự.');
@@ -122,9 +116,16 @@ class DepartmentController extends Controller
                     \set_flash_message('error', 'Thành viên đã tồn tại trong ban này.');
                 }
             } elseif ($action == 'remove') {
-                $membershipId = $_POST['membership_id'];
+                $membershipId = $_POST['membership_id']; // Đã khớp với View mới
                 $this->membershipModel->removeMember($membershipId);
                 \set_flash_message('success', 'Đã xóa thành viên khỏi ban.');
+            }
+            // SỬA: Thêm logic cập nhật vai trò
+            elseif ($action == 'update_role') {
+                $membershipId = $_POST['membership_id'];
+                $role = $_POST['role'];
+                $this->membershipModel->updateRole($membershipId, $role);
+                \set_flash_message('success', 'Đã cập nhật vai trò.');
             }
 
             $this->redirect(BASE_URL . '/department/members/' . $id);
@@ -133,7 +134,6 @@ class DepartmentController extends Controller
         $members = $this->membershipModel->getMembersByDepartment($id);
         $allUsers = $this->userModel->getAllUsers();
 
-        // Lọc user chưa vào ban (để hiện dropdown)
         $existingUserIds = array_column($members, 'user_id');
         $availableUsers = array_filter($allUsers['users'], function ($u) use ($existingUserIds) {
             return !in_array($u['id'], $existingUserIds);

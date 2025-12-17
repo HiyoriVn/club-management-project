@@ -19,15 +19,12 @@
     </div>
 
     <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6 flex gap-4">
-        <div class="flex-1">
-            <input type="text" id="fileSearch" placeholder="Tìm kiếm tên file..." class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-        </div>
-        <div class="w-48">
+        <div class="w-full md:w-64">
             <select onchange="window.location.href='?dept_id='+this.value" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                <option value="">-- Lọc theo Ban --</option>
+                <option value=""> Tất cả tài liệu </option>
                 <?php foreach ($departments as $dept): ?>
                     <option value="<?= $dept['id'] ?>" <?= (isset($_GET['dept_id']) && $_GET['dept_id'] == $dept['id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($dept['name']) ?>
+                        Ban: <?= htmlspecialchars($dept['name']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -59,17 +56,21 @@
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-10 w-10 bg-gray-100 rounded flex items-center justify-center text-2xl text-gray-500">
                                         <?php
-                                        $ext = pathinfo($file['file_name'], PATHINFO_EXTENSION);
+                                        // Icon theo đuôi file
+                                        $ext = strtolower($file['type']);
                                         $icon = 'document-outline';
-                                        if (in_array($ext, ['jpg', 'png', 'jpeg'])) $icon = 'image-outline';
+                                        if (in_array($ext, ['jpg', 'png', 'jpeg', 'gif'])) $icon = 'image-outline';
                                         if (in_array($ext, ['pdf'])) $icon = 'document-text-outline';
-                                        if (in_array($ext, ['xls', 'xlsx'])) $icon = 'grid-outline';
+                                        if (in_array($ext, ['xls', 'xlsx', 'csv'])) $icon = 'grid-outline';
+                                        if (in_array($ext, ['doc', 'docx'])) $icon = 'document-outline';
+                                        if (in_array($ext, ['zip', 'rar'])) $icon = 'file-tray-full-outline';
                                         ?>
                                         <ion-icon name="<?= $icon ?>"></ion-icon>
                                     </div>
                                     <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900"><?= htmlspecialchars($file['file_name']) ?></div>
-                                        <div class="text-xs text-gray-500"><?= strtoupper($ext) ?> File</div>
+                                        <div class="text-sm font-medium text-gray-900 truncate max-w-xs" title="<?= htmlspecialchars($file['file_name']) ?>">
+                                            <?= htmlspecialchars($file['file_name']) ?>
+                                        </div>
                                     </div>
                                 </div>
                             </td>
@@ -95,12 +96,12 @@
                                 <?= date('d/m/Y', strtotime($file['uploaded_at'])) ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="<?= BASE_URL ?>/uploads/<?= $file['file_path'] ?>" download class="text-indigo-600 hover:text-indigo-900 mr-3" title="Tải xuống">
+                                <a href="<?= BASE_URL ?>/../uploads/<?= $file['file_path'] ?>" download="<?= $file['file_name'] ?>" class="text-indigo-600 hover:text-indigo-900 mr-3" title="Tải xuống">
                                     <ion-icon name="download-outline" class="text-lg"></ion-icon>
                                 </a>
 
                                 <?php if ($_SESSION['user_role'] == 'admin' || $_SESSION['user_id'] == $file['uploaded_by']): ?>
-                                    <a href="<?= BASE_URL ?>/file/delete/<?= $file['id'] ?>" onclick="return confirm('Xóa file này?')" class="text-red-600 hover:text-red-900" title="Xóa">
+                                    <a href="<?= BASE_URL ?>/file/delete/<?= $file['id'] ?>" onclick="return confirm('Xóa file này vĩnh viễn?')" class="text-red-600 hover:text-red-900" title="Xóa">
                                         <ion-icon name="trash-outline" class="text-lg"></ion-icon>
                                     </a>
                                 <?php endif; ?>
@@ -141,7 +142,7 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Thuộc Ban (Tùy chọn)</label>
                                         <select name="department_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                            <option value="">-- Tài liệu chung --</option>
+                                            <option value=""> Tài liệu chung </option>
                                             <?php foreach ($departments as $dept): ?>
                                                 <option value="<?= $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?></option>
                                             <?php endforeach; ?>

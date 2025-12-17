@@ -7,7 +7,7 @@ class Controller
     /**
      * Load View
      */
-    public function view($view, $data = [])
+    protected function view($view, $data = [])
     {
         // Extract data thành các biến độc lập để view dùng
         extract($data);
@@ -23,7 +23,7 @@ class Controller
     /**
      * Load Model
      */
-    public function model($model)
+    protected function model($model)
     {
         // Require file model
         require_once '../app/Models/' . $model . '.php';
@@ -37,7 +37,7 @@ class Controller
     /**
      * Chuyển hướng trang
      */
-    public function redirect($url)
+    protected function redirect($url)
     {
         header('Location: ' . $url);
         exit;
