@@ -85,34 +85,74 @@ class UserController extends Controller
         }
 
         $id = $_SESSION['user_id'];
-
-        // Lấy dữ liệu từ form
         $updateData = [
             'name' => trim($_POST['name']),
             'phone' => trim($_POST['phone']),
             'gender' => $_POST['gender'],
-            'dob' => $_POST['dob'],
+            'dob' => !empty($_POST['dob']) ? $_POST['dob'] : null,
             'address' => trim($_POST['address']),
             'bio' => trim($_POST['bio'])
-            // Không cho phép user tự đổi email/role ở đây
         ];
 
-        // Validate cơ bản
         if (empty($updateData['name'])) {
-            \set_flash_message('error', 'Họ tên không được để trống.');
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Họ tên không được để trống.');
             $this->redirect(BASE_URL . '/user/profile');
             return;
         }
 
-        // Gọi Model update
-        if ($this->userModel->update($id, $updateData)) {
-            // Cập nhật lại session name nếu đổi tên
+        if ($this->userModel->update($id, $updateData)) { // Sử dụng hàm update đã sửa trong Model
             $_SESSION['user_name'] = $updateData['name'];
-
             $this->logModel->create($id, 'profile_update', 'Cập nhật hồ sơ cá nhân.');
-            \set_flash_message('success', 'Cập nhật hồ sơ thành công.');
+            if (function_exists('set_flash_message')) \set_flash_message('success', 'Cập nhật hồ sơ thành công.');
         } else {
-            \set_flash_message('error', 'Có lỗi xảy ra khi cập nhật.');
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Có lỗi xảy ra khi cập nhật.');
+        }
+
+        $this->redirect(BASE_URL . '/user/profile');
+    }
+
+    /**
+     * Đổi mật khẩu cá nhân
+     */
+    public function change_password_personal()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect(BASE_URL . '/user/profile');
+        }
+
+        $id = $_SESSION['user_id'];
+        $currentPass = $_POST['current_password'];
+        $newPass = $_POST['new_password'];
+        $confirmPass = $_POST['confirm_password'];
+
+        $user = $this->userModel->getProfile($id);
+        $userRow = $this->userModel->login($user['email'], $currentPass);
+
+        if (!$userRow) {
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Mật khẩu hiện tại không đúng.');
+            $this->redirect(BASE_URL . '/user/profile');
+            return;
+        }
+
+        if ($newPass !== $confirmPass) {
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Mật khẩu xác nhận không khớp.');
+            $this->redirect(BASE_URL . '/user/profile');
+            return;
+        }
+
+        if (strlen($newPass) < 6) {
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Mật khẩu mới quá ngắn (tối thiểu 6 ký tự).');
+            $this->redirect(BASE_URL . '/user/profile');
+            return;
+        }
+
+        // Thực hiện đổi
+        $newHash = password_hash($newPass, PASSWORD_DEFAULT);
+        if ($this->userModel->changePassword($id, $newHash)) {
+            $this->logModel->create($id, 'password_change', 'Đổi mật khẩu cá nhân.');
+            if (function_exists('set_flash_message')) \set_flash_message('success', 'Đổi mật khẩu thành công.');
+        } else {
+            if (function_exists('set_flash_message')) \set_flash_message('error', 'Lỗi hệ thống khi đổi mật khẩu.');
         }
 
         $this->redirect(BASE_URL . '/user/profile');
@@ -231,25 +271,41 @@ class UserController extends Controller
                 'system_role' => $_POST['system_role'],
                 'phone' => trim($_POST['phone']),
                 'gender' => $_POST['gender'],
-                'dob' => $_POST['dob'],
+                'dob' => !empty($_POST['dob']) ? $_POST['dob'] : null,
                 'address' => trim($_POST['address']),
                 'bio' => trim($_POST['bio'])
             ];
+            $messages = [];
+            $hasError = false;
 
-            // Nếu muốn đổi mật khẩu cho user
+            // 1. Đổi mật khẩu nếu có nhập
             if (!empty($_POST['new_password'])) {
-                // Logic đổi pass riêng hoặc gộp vào đây tùy nhu cầu
-                $this->userModel->changePassword($id, $_POST['new_password']);
+                $newHash = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
+                if ($this->userModel->changePassword($id, $newHash)) {
+                    $messages[] = "Đã đổi mật khẩu.";
+                } else {
+                    $messages[] = "Lỗi đổi mật khẩu.";
+                    $hasError = true;
+                }
             }
 
+            // 2. Cập nhật thông tin (Model đã fix lỗi)
             if ($this->userModel->update($id, $updateData)) {
+                $messages[] = "Cập nhật thông tin thành công.";
                 $this->logModel->create($_SESSION['user_id'], 'user_update', "Cập nhật user ID: $id");
-                \set_flash_message('success', 'Cập nhật thành công.');
-                $this->redirect(BASE_URL . '/user/index');
             } else {
-                \set_flash_message('error', 'Có lỗi xảy ra.');
-                $this->redirect(BASE_URL . '/user/edit/' . $id);
+                $messages[] = "Lỗi cập nhật hồ sơ.";
+                $hasError = true;
             }
+
+            $finalMsg = implode(' ', $messages);
+            if ($hasError) {
+                if (function_exists('set_flash_message')) \set_flash_message('error', $finalMsg);
+            } else {
+                if (function_exists('set_flash_message')) \set_flash_message('success', $finalMsg);
+            }
+
+            $this->redirect(BASE_URL . '/user/index');
         }
     }
 

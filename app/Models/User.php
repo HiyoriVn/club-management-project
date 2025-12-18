@@ -23,14 +23,11 @@ class User
     {
         try {
             $this->db->beginTransaction();
-
-            // 1. Insert vào bảng users
             $this->db->query("INSERT INTO users (name, email, password, system_role, is_active) 
                               VALUES (:name, :email, :password, :system_role, 1)");
 
             $this->db->bind(':name', $data['name']);
             $this->db->bind(':email', $data['email']);
-            // Password cần được hash trước khi truyền vào đây hoặc hash tại đây
             $passwordHash = password_hash($data['password'], PASSWORD_DEFAULT);
             $this->db->bind(':password', $passwordHash);
             $this->db->bind(':system_role', $data['system_role'] ?? 'member');
@@ -41,7 +38,6 @@ class User
 
             $userId = $this->db->lastInsertId();
 
-            // 2. Insert vào bảng user_profiles (Thông tin cơ bản)
             $this->db->query("INSERT INTO user_profiles (user_id, phone, gender, dob, address, bio) 
                               VALUES (:user_id, :phone, :gender, :dob, :address, :bio)");
 
@@ -66,7 +62,7 @@ class User
     }
     
     /**
-     * Lấy thông tin chi tiết User (Join users + user_profiles)
+     * Lấy thông tin chi tiết User
      */
     public function getProfile($id)
     {
@@ -74,7 +70,7 @@ class User
                        p.phone, p.gender, p.dob, p.address, p.bio, p.avatar
                 FROM users u
                 LEFT JOIN user_profiles p ON u.id = p.user_id
-                WHERE u.id = :id AND u.is_active = 1"; // Chỉ lấy user còn active
+                WHERE u.id = :id AND u.is_active = 1";
 
         $this->db->query($sql);
         $this->db->bind(':id', $id);
@@ -83,7 +79,7 @@ class User
     }
 
     /**
-     * Cập nhật thông tin User (Profile + Basic Info)
+     * Cập nhật thông tin User 
      */
     public function update($id, $data)
     {
@@ -91,7 +87,6 @@ class User
             $this->db->beginTransaction();
 
             // 1. Update bảng users (nếu có thay đổi name/email/role)
-            // Chỉ update các trường có trong $data
             if (isset($data['name']) || isset($data['email']) || isset($data['system_role'])) {
                 $sql = "UPDATE users SET ";
                 $updates = [];
@@ -111,16 +106,16 @@ class User
             }
 
             // 2. Update bảng user_profiles
-            // Kiểm tra xem profile đã tồn tại chưa (đề phòng data cũ thiếu)
             $this->db->query("SELECT user_id FROM user_profiles WHERE user_id = :id");
             $this->db->bind(':id', $id);
+            $existingProfile = $this->db->single();
 
-            if ($this->db->rowCount() == 0) {
-                // Nếu chưa có profile -> Insert
+            if (!$existingProfile) {
+                // Chưa có -> Insert
                 $this->db->query("INSERT INTO user_profiles (user_id, phone, gender, dob, address, bio) 
                                   VALUES (:id, :phone, :gender, :dob, :address, :bio)");
             } else {
-                // Nếu có rồi -> Update
+                // Có rồi -> Update
                 $this->db->query("UPDATE user_profiles SET 
                                   phone = :phone, gender = :gender, dob = :dob, 
                                   address = :address, bio = :bio 
@@ -178,11 +173,10 @@ class User
     /**
      * Thay đổi mật khẩu
      */
-    public function changePassword($id, $newPassword)
+    public function changePassword($id, $newPasswordHash)
     {
-        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
         $this->db->query("UPDATE users SET password = :password WHERE id = :id");
-        $this->db->bind(':password', $hashed);
+        $this->db->bind(':password', $newPasswordHash);
         $this->db->bind(':id', $id);
         return $this->db->execute();
     }
@@ -240,10 +234,10 @@ class User
     public function getAllUsers($search = '', $role = '', $page = 1, $limit = 10)
     {
         $offset = ($page - 1) * $limit;
-        $where = ["is_active = 1"]; // Chỉ lấy user active
+        $where = ["is_active = 1"];
 
         if (!empty($search)) {
-            $where[] = "(name LIKE :search OR email LIKE :search)";
+            $where[] = "(name LIKE :search_name OR email LIKE :search_email)";
         }
         if (!empty($role)) {
             $where[] = "system_role = :role";
@@ -254,7 +248,10 @@ class User
         // Count total
         $sqlCount = "SELECT COUNT(*) as total FROM users WHERE $whereSql";
         $this->db->query($sqlCount);
-        if (!empty($search)) $this->db->bind(':search', "%$search%");
+        if (!empty($search)) {
+            $this->db->bind(':search_name', "%$search%");
+            $this->db->bind(':search_email', "%$search%");
+        }
         if (!empty($role)) $this->db->bind(':role', $role);
 
         $totalRow = $this->db->single();
@@ -268,7 +265,10 @@ class User
                     LIMIT :limit OFFSET :offset";
 
         $this->db->query($sqlData);
-        if (!empty($search)) $this->db->bind(':search', "%$search%");
+        if (!empty($search)) {
+            $this->db->bind(':search_name', "%$search%");
+            $this->db->bind(':search_email', "%$search%");
+        }
         if (!empty($role)) $this->db->bind(':role', $role);
         $this->db->bind(':limit', $limit, PDO::PARAM_INT);
         $this->db->bind(':offset', $offset, PDO::PARAM_INT);
@@ -289,5 +289,51 @@ class User
                 ORDER BY name ASC";
         $this->db->query($sql);
         return $this->db->resultSet();
+    }
+    public function findById($id)
+    {
+        // Lấy thông tin user + profile
+        $sql = "SELECT u.*, up.phone, up.gender, up.dob, up.address, up.bio, up.avatar 
+                FROM users u
+                LEFT JOIN user_profiles up ON u.id = up.user_id
+                WHERE u.id = :id";
+        $this->db->query($sql);
+        $this->db->bind(':id', $id);
+        return $this->db->single();
+    }
+
+    public function updateProfile($userId, $data)
+    {
+        // 1. Kiểm tra tồn tại
+        $this->db->query("SELECT user_id FROM user_profiles WHERE user_id = :id");
+        $this->db->bind(':id', $userId);
+        $this->db->single();
+
+        if ($this->db->rowCount() > 0) {
+            // Có rồi -> UPDATE
+            $sql = "UPDATE user_profiles SET phone = :phone, gender = :gender, dob = :dob, address = :address, bio = :bio WHERE user_id = :id";
+        } else {
+            // Chưa có -> INSERT
+            $sql = "INSERT INTO user_profiles (user_id, phone, gender, dob, address, bio) VALUES (:id, :phone, :gender, :dob, :address, :bio)";
+        }
+
+        $this->db->query($sql);
+        $this->db->bind(':id', $userId);
+        $this->db->bind(':phone', $data['phone']);
+        $this->db->bind(':gender', $data['gender']);
+        $this->db->bind(':dob', !empty($data['dob']) ? $data['dob'] : null);
+        $this->db->bind(':address', $data['address']);
+        $this->db->bind(':bio', $data['bio']);
+        $this->db->execute();
+
+        // Cập nhật tên ở bảng users
+        if (isset($data['name'])) {
+            $this->db->query("UPDATE users SET name = :name WHERE id = :id");
+            $this->db->bind(':name', $data['name']);
+            $this->db->bind(':id', $userId);
+            $this->db->execute();
+        }
+
+        return true;
     }
 }

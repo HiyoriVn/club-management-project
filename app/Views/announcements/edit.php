@@ -23,7 +23,7 @@
             <div>
                 <label class="block text-sm font-bold text-gray-700 mb-1">Gửi tới</label>
                 <select name="target_department_id" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    <option value="" <?= empty($announcement['target_department_id']) ? 'selected' : '' ?>>-- Toàn thể CLB --</option>
+                    <option value="" <?= empty($announcement['target_department_id']) ? 'selected' : '' ?>>Toàn thể CLB</option>
                     <?php foreach ($departments as $dept): ?>
                         <option value="<?= $dept['id'] ?>" <?= ($announcement['target_department_id'] == $dept['id']) ? 'selected' : '' ?>>
                             Ban: <?= htmlspecialchars($dept['name']) ?>

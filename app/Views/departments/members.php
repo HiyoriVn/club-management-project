@@ -47,7 +47,7 @@
                                             <input type="hidden" name="action" value="update_role">
                                             <input type="hidden" name="membership_id" value="<?= $mem['membership_id'] ?>">
                                             <select name="role" onchange="this.form.submit()" class="text-xs border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 py-1">
-                                                <option value="Member" <?= $mem['department_role'] == 'Member' ? 'selected' : '' ?>>Member</option>
+                                                <option value="Member" <?= $mem['department_role'] == 'Member' ? 'selected' : '' ?>>Thành viên</option>
                                                 <option value="Deputy" <?= $mem['department_role'] == 'Deputy' ? 'selected' : '' ?>>Phó ban</option>
                                                 <option value="Head" <?= $mem['department_role'] == 'Head' ? 'selected' : '' ?>>Trưởng ban</option>
                                             </select>
@@ -82,7 +82,7 @@
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Chọn người dùng</label>
                                 <select name="user_id" required class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <option value="">-- Chọn user --</option>
+                                    <option value="">Chọn người dùng</option>
                                     <?php foreach ($available_users as $u): ?>
                                         <option value="<?= $u['id'] ?>"><?= htmlspecialchars($u['name']) ?> (<?= $u['email'] ?>)</option>
                                     <?php endforeach; ?>
@@ -93,9 +93,9 @@
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Vai trò trong ban</label>
                                 <select name="role" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <option value="Member">Thành viên (Member)</option>
-                                    <option value="Deputy">Phó ban (Deputy)</option>
-                                    <option value="Head">Trưởng ban (Head)</option>
+                                    <option value="Member">Thành viên</option>
+                                    <option value="Deputy">Phó ban</option>
+                                    <option value="Head">Trưởng ban</option>
                                 </select>
                             </div>
 

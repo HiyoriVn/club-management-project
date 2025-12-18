@@ -56,7 +56,6 @@
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-10 w-10 bg-gray-100 rounded flex items-center justify-center text-2xl text-gray-500">
                                         <?php
-                                        // Icon theo đuôi file
                                         $ext = strtolower($file['type']);
                                         $icon = 'document-outline';
                                         if (in_array($ext, ['jpg', 'png', 'jpeg', 'gif'])) $icon = 'image-outline';
@@ -100,7 +99,7 @@
                                     <ion-icon name="download-outline" class="text-lg"></ion-icon>
                                 </a>
 
-                                <?php if ($_SESSION['user_role'] == 'admin' || $_SESSION['user_id'] == $file['uploaded_by']): ?>
+                                <?php if ($_SESSION['user_role'] == 'admin' || $_SESSION['user_role'] == 'subadmin' || $_SESSION['user_id'] == $file['uploaded_by']): ?>
                                     <a href="<?= BASE_URL ?>/file/delete/<?= $file['id'] ?>" onclick="return confirm('Xóa file này vĩnh viễn?')" class="text-red-600 hover:text-red-900" title="Xóa">
                                         <ion-icon name="trash-outline" class="text-lg"></ion-icon>
                                     </a>

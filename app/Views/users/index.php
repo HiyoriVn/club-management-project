@@ -17,7 +17,7 @@
         <div class="w-48">
             <label class="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
             <select name="role" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                <option value="">-- Tất cả --</option>
+                <option value=""> Tất cả </option>
                 <option value="member" <?= ($role_filter == 'member') ? 'selected' : ''; ?>>Member</option>
                 <option value="subadmin" <?= ($role_filter == 'subadmin') ? 'selected' : ''; ?>>Sub-Admin</option>
                 <option value="admin" <?= ($role_filter == 'admin') ? 'selected' : ''; ?>>Admin</option>

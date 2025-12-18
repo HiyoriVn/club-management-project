@@ -91,7 +91,6 @@ class Project
 
     public function getTasks($projectId)
     {
-        // Sử dụng GROUP_CONCAT để gộp tên nhiều người được giao vào 1 dòng (cách nhau dấu phẩy)
         $sql = "SELECT t.*, GROUP_CONCAT(u.name SEPARATOR ', ') as assignee_name 
                 FROM tasks t
                 LEFT JOIN task_assignees ta ON t.id = ta.task_id
@@ -143,11 +142,6 @@ class Project
         $this->db->bind(':id', $id);
         return $this->db->execute();
     }
-
-    // ==========================================
-    // CÁC HÀM QUẢN LÝ THÀNH VIÊN (Project Members)
-    // ==========================================
-
     /**
      * Kiểm tra User có quyền truy cập dự án không
      * (Là Leader HOẶC có tên trong danh sách thành viên)
